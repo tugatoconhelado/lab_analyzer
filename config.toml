@@ -1,0 +1,7 @@
+[plot_defaults]
+label="Data"
+color="#1f77b4"
+marker="o"
+line_style="None"
+line_width=0
+

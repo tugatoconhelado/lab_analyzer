@@ -1,0 +1,35 @@
+/* Apply to toggle_frame */
+QFrame#toggle_frame {
+    background-color: #000000; 
+    border-radius: 0px;
+    padding: 0px;
+    border: 1px solid transparent;
+}
+
+QFrame#toggle_frame QPushButton {
+    margin: 0px;
+    border: 1px solid #8f14f5;
+    padding: 6px 6px;
+    color: #fff;
+    background-color: black;
+    font-weight: 600;
+    font-size: 11px;
+}
+QPushButton#display_button {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
+QPushButton#inspect_button {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+}
+
+QFrame#toggle_frame QPushButton:checked {
+    background-color: #770ecc;
+    color: #fff;
+    border: 1px solid #8f14f5;
+}

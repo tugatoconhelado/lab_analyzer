@@ -1,0 +1,266 @@
+from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtCore import Qt
+from PyQt5.QtCore import pyqtSignal as Signal
+from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.uic import loadUi
+
+import numpy as np
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from src.core.structures import DataResult, LineConfig
+from src.gui.bridge import AnalyzerBridge
+from src.gui.plotting.plot_config import PlotControlDock
+from src.gui.plotting.plot_widget import PlotWidget
+from src.core.style_generator import LineType
+from src.gui.file_explorer import FileExplorerDock
+from src.gui.fitting.fit_dock import FitDock
+from src.gui.console.console import ConsoleWidget
+from src.gui.console.workbench import WorkbenchWidget
+from src.gui.file_loader.hdf5_explorer import HDF5ExplorerDock
+from src.gui.log_registry.log_registry import LogRegistryDock
+from src.gui.console.variable_explorer import VariableExplorerDock
+
+
+class AnalyzerMainWindow(QMainWindow):
+    """
+    Main Window of the Analyzer software
+    """
+
+    def __init__(self, bridge: AnalyzerBridge, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        loadUi(
+            os.path.join('resources', 'ui', 'analyzer.ui'), self
+        )
+
+        self._bridge = bridge
+        self.plot_counter = 0
+        self._open_plots = {}
+
+        self.preview_index = 2
+        self.axis_options_path = {}
+
+        self._setup_console()
+        self._setup_hdf5_explorer()
+        self._setup_file_explorer()
+        self._setup_fit_dock()
+        self._setup_plot_config()
+        self._setup_log_registry()
+        self.create_new_plot("Initial Plot")
+
+    def _setup_log_registry(self):
+        self.log_registry = LogRegistryDock(parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.log_registry)
+
+    def _setup_console(self):
+        """"
+        Sets up the Jupyter console and variable explorer,
+        and connects them to an in-process kernel.
+        """
+
+        self.workbench = WorkbenchWidget(self)
+        self.setCentralWidget(self.workbench)
+        self.variable_explorer = VariableExplorerDock(self.workbench.console.kernel.shell)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.variable_explorer)
+        
+        # Expose the Hub itself to the console so the user can
+        # script the UI (e.g., 'hub.spawn_plot()')
+        self.workbench.console.push_to_console({'hub': self})
+        self.workbench.console.refresh_variable_explorer_sig.connect(
+            self.variable_explorer.explorer.refresh)
+
+
+    def _setup_hdf5_explorer(self):
+        
+        self.hdf5_explorer = HDF5ExplorerDock(parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.hdf5_explorer)
+
+        ### Gui Logic connections ###
+        self._bridge.imported_data_sig.connect(
+            self.hdf5_explorer.update_imported_data_tree
+        )
+
+        # Preview/Inspect management
+        self.hdf5_explorer.request_inspect_info_sig.connect(
+            self._bridge.fetch_inspect_info
+        )
+        self._bridge.inspect_info_sig.connect(
+            self.hdf5_explorer.update_inspect_info
+        )
+        self.hdf5_explorer.request_preview_sig.connect(
+            self._bridge.fetch_preview_data
+        )
+        self._bridge.preview_data_sig.connect(
+            self.hdf5_explorer.update_preview_plot
+        )
+        self.hdf5_explorer.import_hdf5_sig.connect(
+            self._bridge.import_hdf5_data
+        )
+
+        # Setting axis data
+        self.hdf5_explorer.request_data_sig.connect(
+            self._bridge.fetch_data
+        )
+        self._bridge.data_sig.connect(
+            self.plot_data
+        )
+
+    def _setup_fit_dock(self):
+
+        self.fit_dock = FitDock(parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.fit_dock)
+        self.tabifyDockWidget(self.file_explorer, self.fit_dock)
+        self.file_explorer.raise_()
+
+        # Managing fitting events
+        self.fit_dock.fit_button.clicked.connect(
+            self._bridge.perform_fit
+        )
+        self._bridge.fit_data_sig.connect(
+            self.plot_fit_data
+        )
+        self._bridge.residuals_sig.connect(
+            self.plot_fit_residuals
+        )
+        self._bridge.fit_report_sig.connect(
+            self.fit_dock.update_fit_report
+        )
+
+        # Model selection and parameter setting
+        self.fit_dock.request_models_sig.connect(
+            self._bridge.get_models
+        )
+        self.fit_dock.select_model_sig.connect(
+            self._bridge.set_model
+        )
+        self._bridge.params_sig.connect(
+            self.fit_dock.update_parameters_table
+        )
+        self.fit_dock.guess_button.clicked.connect(
+            self._bridge.guess_parameters
+        )
+
+    def _setup_file_explorer(self):
+
+        self.file_explorer = FileExplorerDock("File Explorer", parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.file_explorer)
+        
+    def _setup_plot_config(self):
+
+        self.config_widget = PlotControlDock(parent=self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.config_widget)
+        self.config_widget.line_config_changed.connect(self.update_plot_config)
+        self.tabifyDockWidget(self.fit_dock, self.config_widget)
+
+    def create_new_plot(self, title="New Plot"):
+
+        self.plot_counter += 1
+        plot = PlotWidget(plot_id=f"Data Plot {self.plot_counter}", parent=self)
+        self._open_plots[plot.plot_id] = plot
+        plot.setWindowTitle(title)
+        plot.show()
+        plot.raise_()
+
+    @Slot(str, LineConfig)
+    def update_plot_config(self, line: str, config: LineConfig):
+
+        plot = list(self._open_plots.values())[0]
+        plot.plot_canvas.apply_line_config(line, config)
+
+    @Slot(DataResult, DataResult)
+    def plot_data(self, x_data, y_data):
+
+        plot = list(self._open_plots.values())[0]
+        line_id = plot.plot_canvas.add_data_line(x_data, y_data)
+        fit_config = self.config_widget.add_line_config(line_id, LineType.RAW_DATA)
+        plot.plot_canvas.apply_line_config(line_id, fit_config)
+
+    @Slot(np.ndarray, np.ndarray)
+    def plot_fit_data(self, x_data, fit_data):
+
+        plot = list(self._open_plots.values())[0]
+        line_id = plot.plot_canvas.add_fit_line(x_data, fit_data)
+        fit_config = self.config_widget.add_line_config(line_id, LineType.FIT_CURVE)
+        plot.plot_canvas.apply_line_config(line_id, fit_config)
+
+    @Slot(np.ndarray, np.ndarray)
+    def plot_fit_residuals(self, x_data, residuals):
+
+        pass
+
+
+
+if __name__ == "__main__":
+    import sys
+    from PyQt5.QtWidgets import QApplication
+    from src.gui.bridge import AnalyzerBridge
+
+    app = QApplication(sys.argv)
+    
+    class MockBridge:
+        def request_load(self, p): print(f"Mock loading: {p}")
+        
+    window = AnalyzerMainWindow(bridge=MockBridge())  # type: ignore
+    window.show()
+
+    data = {
+        'pl_mean': np.random.random(100),
+        'pl_raw_mean': np.random.random((10, 10, 2)),
+        'pl_raw_std': np.random.random((10, 10, 2)),
+        'pl_std': np.random.random(100),
+        'tau': np.random.random(100)
+    }
+    metadata = {'iterations': 30, 'loop': 10000, 'repeat_exp': 10, 'sequence': 'T1laser'}
+    general = {
+        'column_dtypes': np.array([b'float64', b'float64', b'float64', b'float64', b'float64'], dtype='|S7'),
+        'column_headers': np.array(['tau', 'pl_raw_mean', 'pl_raw_std', 'pl_mean', 'pl_std'], dtype=object),
+        'notes': 'This are some notes',
+        'steps': np.array([10, 30]),
+        'timestamp': '2026-04-09T13:58:15.277085'
+    }
+
+    tree = {
+        '/': {
+            'type': 'Group',
+            'children': {
+                'Analysis': {
+                    'type': 'Group',
+                    'children': {
+                        '20260416-1304-53_SingleExponential': {
+                            'type': 'Group',
+                            'children': {
+                                'ModelTraces': {
+                                    'type': 'Group',
+                                    'children': {
+                                        'fit_x': {'type': 'Dataset', 'shape': (30,)},
+                                        'fit_y': {'type': 'Dataset', 'shape': (30,)},
+                                        'residuals': {'type': 'Dataset', 'shape': (30,)},
+                                        'x': {'type': 'Dataset', 'shape': (30,)},
+                                        'y': {'type': 'Dataset', 'shape': (30,)}
+                                    }
+                                },
+                                'parameters': {'type': 'Dataset'},
+                                'report': {'type': 'Dataset'}
+                            }
+                        }
+                    }
+                },
+                'Data': {
+                    'type': 'Group',
+                    'children': {
+                        'pl_mean': {'type': 'Dataset', 'shape': (30,)},
+                        'pl_raw_mean': {'type': 'Dataset', 'shape': (10, 30, 2)},
+                        'pl_raw_std': {'type': 'Dataset', 'shape': (10, 30, 2)},
+                        'pl_std': {'type': 'Dataset', 'shape': (30,)},
+                        'tau': {'type': 'Dataset', 'shape': (30,)}
+                    }
+                }
+            }
+        }
+    }
+    #window.hdf5_explorer.update_imported_data_tree(tree)
+    #window.create_new_plot("Test Plot")
+    sys.exit(app.exec())

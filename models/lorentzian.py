@@ -3,7 +3,8 @@ from models.labmodel import LabModel
 
 class OdmrLorentzian(LabModel):
 
-    name = "ODMRLorentzian"
+    model_name = "ODMRLorentzian"
+    
     def fit_func(self, x, amplitude=-0.05, center=2.87, sigma=0.01, background=1.0):
         """A simple Lorentzian dip for NV ODMR."""
         return background + (amplitude * sigma**2) / ((x - center)**2 + sigma**2)

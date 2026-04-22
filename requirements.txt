@@ -1,0 +1,7 @@
+pyside6
+numpy
+scipy
+matplotlib
+lmfit
+pyqtgraph
+h5py

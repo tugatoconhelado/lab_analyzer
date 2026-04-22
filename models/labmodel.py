@@ -1,16 +1,18 @@
 import lmfit
 
+
 class LabModel(lmfit.Model):
 
-    name = "LabModel"
+    model_name = "LabModel"
 
     def __init__(self, *args, **kwargs):
         # We pass the fit_func of the subclass to the lmfit.Model parent
-        super().__init__(self.fit_func, *args, **kwargs)
+        super().__init__(
+            func=self.fit_func, name=self.model_name, *args, **kwargs)
 
         self.params = self.make_params()
 
-    def fit_func(self, x, **kwargs):
+    def fit_func(self, x, *args, **kwargs):
         raise NotImplementedError("Subclasses must implement fit_func")
 
     def guess_initial_params(self, x, y):

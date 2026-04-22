@@ -3,7 +3,7 @@ from models.labmodel import LabModel
 
 class Exponential(LabModel):
 
-    name = "SingleExponential"
+    model_name = "SingleExponential"
 
     def fit_func(self, x, T1=55.5, amplitude=0.2, background=1.0):
         """
