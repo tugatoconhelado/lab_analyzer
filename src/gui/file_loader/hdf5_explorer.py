@@ -1,8 +1,8 @@
 import os
 import sys
 
-from PyQt5.QtWidgets import QAbstractButton, QDockWidget, QButtonGroup, QFileDialog, QHBoxLayout, QLabel, QTreeWidgetItem
-from PyQt5.QtCore import QRectF, Qt
+from PyQt5.QtWidgets import QAbstractButton, QDockWidget, QButtonGroup, QFileDialog, QHBoxLayout, QLabel, QTreeWidgetItem, QHeaderView, QMenu, QSplitter
+from PyQt5.QtCore import QRectF, Qt, QPoint
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.uic import loadUi
@@ -11,6 +11,7 @@ import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from src.core.structures import InspectInfo, DataResult
+from src.gui.file_loader.file_previewer import FilePreviewer
 
 
 
@@ -54,136 +55,105 @@ class HDF5ExplorerDock(QDockWidget):
         Applies custom CSS styling to the toggle buttons
         to create a segmented control appearance.
     """
-    request_preview_sig = Signal(str)
     request_data_sig = Signal(str, str)
-    request_inspect_info_sig = Signal(str)
     import_hdf5_sig = Signal(str)
+    load_to_workbench = Signal(str)
+    current_item_path = Signal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(
             os.path.join('resources', 'ui', 'hdf5_explorer.ui'), self
         )
+        self._setup_previewer()
+
         self.current_file = None
         self.possible_data_paths = [
-            os.path.join(os.path.expanduser("~"), "Scripts", "data")
+            os.path.join(os.path.expanduser("~"), "Scripts", "data"),
+            os.path.join("C:", "EXP", "data")
         ]
         self.axis_options_path = {}
         self.preview_index = 2
-        self._setup_preview_toggle()
-        self._setup_plots()
-        self._connect_gui_signals()
-
-    def _setup_preview_toggle(self):
-        """
-        Configures the toggle buttons for switching between
-        the data preview and inspection views, and applies custom styling.
-        """
-
-        self.toggleGroup = QButtonGroup(self)
-        self.toggleGroup.addButton(self.display_button, 0) # ID 0
-        self.toggleGroup.addButton(self.inspect_button, 1) # ID 1
-        self.toggleGroup.setExclusive(True) # Only one can be pressed
-
-        # Set the default state (Preview active)
-        self.inspect_button.setChecked(True)
-
-        self.toggleGroup.buttonClicked.connect(self._on_toggle_clicked)
-        self._apply_segmented_style()
-
-    def _setup_plots(self):
-        """
-        Initializes the preview plots for both 1D and 2D data.
-
-        This method sets up a line plot for 1D data and an image plot for 2D data,
-        along with a colorbar for the image plot.
-        """
-
-        self.preview_dataline = self.data_preview_plot.plot([], pen="yellow")
-
-        rect = QRectF(0, 0, 1, 1)
-
-        self.heatmap.getViewBox().setAspectLocked(True)
-
-        self.image_item = pg.ImageItem(axisOrder='row-major')
-        self.image_item.setImage(np.zeros((10, 10)))
-        self.image_item.setRect(rect)
-
-        self.heatmap.addItem(self.image_item)
-        self.colorbar = self.heatmap.addColorBar(
-            self.image_item, colorMap=pg.colormap.getFromMatplotlib('inferno')
-        )
-
-    def _connect_gui_signals(self):
-        """
-        Connects GUI signals to their slots for handling user interactions.
-
-        This method connects the toggle button clicks, tree selection changes,
-        axis selection changes, and load button clicks to their corresponding
-        handler methods.
-        """
 
         self.imported_data_tree.currentItemChanged.connect(
             self._on_tree_selection_changed
         )
-        self.x_axis_combobox.activated.connect(self._select_axis_data)
-        self.y_axis_combobox.activated.connect(self._select_axis_data)
         self.load_button.clicked.connect(
             self._select_hdf5_file
         )
 
-    def _apply_segmented_style(self):
-        """
-        Applies custom CSS styling to the toggle buttons 
-        to create a segmented control appearance.
+        self.imported_data_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        
+        self.imported_data_tree.customContextMenuRequested.connect(self.show_context_menu)
 
-        This method reads a stylesheet that styles the toggle buttons to 
-        look like a cohesive segmented control, with specific colors, borders,
-        and rounded corners. It then applies this stylesheet to the toggle
-        frame and forces a style update to ensure the new styles take effect.
+    def _setup_previewer(self):
 
-        The stylesheet is expected to be located at 
-        'resources/styles/toggle_style.qss'
-        """
-        qss_path = os.path.join('resources', 'styles', 'toggle_style.qss')
-        with open(qss_path, 'r') as f:
-            toggle_style = f.read()
-        self.toggle_frame.setStyleSheet(toggle_style)
-        self.toggle_frame.style().unpolish(self.toggle_frame)
-        self.toggle_frame.style().polish(self.toggle_frame)
-        self.toggle_frame.update()
+        self.previewer = FilePreviewer(self)
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.addWidget(self.imported_data_tree)
+        self.splitter.addWidget(self.previewer)
 
-    @Slot(QAbstractButton)
-    def _on_toggle_clicked(self, button):
-        """
-        Slot that handles toggle button clicks and updates the preview panel.
+        self.explorer_layout.addWidget(self.splitter)
 
-        If the "Inspect" button is clicked, it switches to the inspection view.
-        If the "Preview" button is clicked, it emits a signal to request a 
-        data preview for the currently selected file in the tree.
+        self.current_item_path.connect(
+            self.previewer.update_preview_state
+        )
+        self.previewer.request_current_item_path.connect(
+            self.handle_item_request
+        )
 
-        Parameters
-        ----------
-        button : QPushButton
-            The button that was clicked, used to determine which view to show.
+    def handle_item_request(self):
 
-        Notes
-        -----
-        This method emits the `request_preview_sig` signal with the file path
-        when the preview button is clicked, allowing the main application to 
-        handle loading and displaying the preview.
-        """
-        if button == self.inspect_button:
-            self.preview_index = 2
-            self.preview_stackedwidget.setCurrentIndex(self.preview_index)
-        else:
-            current_tree_item = self.imported_data_tree.currentItem()
-            if not current_tree_item:
-                return
-            path = current_tree_item.data(0, Qt.ItemDataRole.UserRole)["path"]
-            if not path:
-                return
-            self.request_preview_sig.emit(path)
+        current = self.imported_data_tree.currentItem()
+        if current is not None:
+            self._on_tree_selection_changed(current, None)
+
+    def connect_to_bridge(self, bridge):
+
+        self.previewer.request_inspect_info_sig.connect(
+            bridge.fetch_inspect_info
+        )
+        bridge.inspect_info_sig.connect(
+            self.previewer.update_inspect_info
+        )
+        # Setting axis data
+        self.request_data_sig.connect(
+            bridge.fetch_data
+        )
+        self.previewer.request_preview_sig.connect(
+            bridge.fetch_preview_data
+        )
+        bridge.preview_data_sig.connect(
+            self.previewer.update_preview_plot
+        )
+        self.import_hdf5_sig.connect(
+            bridge.import_hdf5_data
+        )
+        bridge.imported_data_sig.connect(
+            self.update_imported_data_tree
+        )
+
+
+    def show_context_menu(self, position: QPoint):
+        # 3. Find the item at the clicked position
+        item = self.imported_data_tree.itemAt(position)
+        
+        # Only show the menu if the user actually clicked on an item
+        if item:
+            menu = QMenu()
+            select_action = menu.addAction("Load to Workbench")
+            
+            # 4. Display the menu and capture the action
+            action = menu.exec(self.imported_data_tree.viewport().mapToGlobal(position))
+            
+            # If "Select" was clicked, perform your logic
+            if action == select_action:
+                self.handle_selection(item)
+
+    def handle_selection(self, item):
+        path = item.data(0, Qt.ItemDataRole.UserRole)["path"]
+        print(f"User selected: {path}")
+        self.load_to_workbench.emit(path)
 
     @Slot(QTreeWidgetItem, QTreeWidgetItem)
     def _on_tree_selection_changed(self, current, previous):
@@ -220,147 +190,7 @@ class HDF5ExplorerDock(QDockWidget):
         shape = current.data(0, Qt.ItemDataRole.UserRole).get("shape", False)
         if not path:
             return
-        # Request inspect info to the logic
-        if self.inspect_button.isChecked() or kind == "Group" or not shape:
-            print("INFO")
-            self.request_inspect_info_sig.emit(path)
-
-        elif self.display_button.isChecked() and kind == "Dataset" and shape:
-            print("PREVIEW")
-            self.request_preview_sig.emit(path)
-
-    @Slot(InspectInfo)
-    def update_inspect_info(self, info: InspectInfo):
-        """
-        Updates the inspection view with the provided information about the selected item.
-        
-        This method takes an `InspectInfo` object containing details about
-        the selected HDF5 item (such as its path, name, type, shape, and 
-        attributes) and populatesthe inspection layout with this information.
-        It clears any existing widgets in the inspection layout before adding
-        new labels and information based on the type of the item.
-        
-        Parameters
-        ----------
-        info : InspectInfo
-            A dataclass containing information about the selected HDF5 item,
-            including its path, name, type, shape, and attributes.
-
-        Notes
-        -----
-        This method dynamically creates labels and layouts to display the information in a
-        structured way, and it switches the preview to the inspection view when called.
-        """
-
-        self._clear_inspect_layout()
-
-        kind = "Dataset" if info.is_dataset else "Group"
-        kind_layout = QHBoxLayout()
-        kind_label = QLabel(kind)
-        kind_label.setStyleSheet("font-size: 10pt;")
-        kind_layout.addWidget(kind_label)
-        kind_layout.setContentsMargins(0, 5, 0, 5)
-        self.inspect_layout.addRow(kind_layout)
-        
-        self.inspect_layout.addRow("Path", QLabel(info.path))
-        self.inspect_layout.addRow("Name", QLabel(info.name))
-
-        if info.is_dataset:
-            if info.dtype is None:
-                raise ValueError(f"Dataset at path '{info.path}' is missing dtype information.")    
-            self.inspect_layout.addRow("Shape", QLabel(str(info.shape)))
-            dtype = info.dtype + ", " + str(info.size_bytes) + ", " + str(info.byte_order)
-            self.inspect_layout.addRow("Type", QLabel(dtype))
-
-        if info.attributes:
-        
-            attr_layout = QHBoxLayout()
-            attr_label = QLabel("Attributes")
-            attr_label.setStyleSheet("font-size: 10pt;")
-            attr_layout.addWidget(attr_label)
-            attr_layout.setContentsMargins(0, 5, 0, 5)
-            self.inspect_layout.addRow(attr_layout)
-
-            for key, value in info.attributes.items():
-                self.inspect_layout.addRow(key, QLabel(str(value)))
-
-        self.preview_index = 2
-        self.inspect_button.click()
-
-    def _clear_inspect_layout(self):
-        """Removes all widgets from the inspect layout."""
-        while self.inspect_layout.rowCount() > 0:
-            self.inspect_layout.removeRow(0)
-
-    @Slot(DataResult)
-    def update_preview_plot(self, data: DataResult):
-        """
-        Updates the preview plot based on the provided data.
-        
-        This method takes a `DataResult` object containing the data to be 
-        previewed and updates the appropriate plot (line plot for 1D data,
-        image plot for 2D/3D data). It checks the dimensionality of the data
-        and updates the preview accordingly. For 1D data, it updates the line
-        plot. For 2D data, it updates the image plot, and for 3D data, it 
-        takes the first channel and updates the image plot.
-
-        Parameters
-        ----------
-        data : DataResult
-            A dataclass containing the data to be previewed, including its dimensionality and the actual
-            data array.
-
-        Notes
-        -----
-        This method also switches the view according to the data when called.
-        """
-        if data.ndim == 1:
-            self.preview_index = 0
-            self.preview_dataline.setData(data.data)
-        elif data.ndim == 2:
-            self.preview_index = 1
-            self._update_preview_img(data.data)
-        elif data.ndim == 3:
-            self.preview_index = 1
-            self._update_preview_img(data.data[:, :, 0])
-
-        self.preview_stackedwidget.setCurrentIndex(self.preview_index)
-
-    def _update_preview_img(self, img: np.ndarray):
-        """Updates the image plot with the provided 2D data array."""
-
-        self.image_item.setImage(np.flip(img, 0))
-        self.colorbar.setLevels((np.min(img), np.max(img)))
-
-    @Slot()
-    def _select_axis_data(self):
-        """
-        Handles the selection of axis data from the combo boxes
-        and emits a signal to request the data.
-
-        This method retrieves the selected axis names from the combo boxes,
-        looks up their corresponding paths in the `axis_options_path` 
-        dictionary, and emits the `request_data_sig` signal with these paths 
-        to request the data for plotting.
-        
-        Parameters
-        ----------
-        None
-        
-        Notes
-        -----
-        This method is called when the user selects an axis from either
-        combo box, and it ensures that the correct data paths are sent to
-        the main application for fetching and plotting the data.
-        """
-
-        x_axis = self.x_axis_combobox.currentText()
-        y_axis = self.y_axis_combobox.currentText()
-        
-        x_path = self.axis_options_path[x_axis]
-        y_path = self.axis_options_path[y_axis]
-
-        self.request_data_sig.emit(x_path, y_path)
+        self.previewer.update_preview_state(path, kind, shape)
 
     @Slot()
     def _select_hdf5_file(self):
@@ -425,16 +255,15 @@ class HDF5ExplorerDock(QDockWidget):
         """
 
         self.imported_data_tree.clear()
-        self.x_axis_combobox.clear()
-        self.y_axis_combobox.clear()
         self.axis_options_path = {}
         
         # We start from the root "/"
-        root_item = QTreeWidgetItem(self.imported_data_tree, ["/"])
+        root_item = QTreeWidgetItem(self.imported_data_tree, ["/", 'Group'])
         root_item.setData(0, Qt.ItemDataRole.UserRole, {"path": "/", "type": "Group"})
         
         self._add_tree_nodes(structure["/"].get("children", {}), root_item)
         self.imported_data_tree.expandAll()
+        self.imported_data_tree.resizeColumnToContents(0)
 
     def _add_tree_nodes(self, data, parent_item):
         """
@@ -469,7 +298,7 @@ class HDF5ExplorerDock(QDockWidget):
         """
         for name, info in data.items():
             # Create the tree item with the name (e.g., 'Exp_001')
-            item = QTreeWidgetItem(parent_item, [name])
+            item = QTreeWidgetItem(parent_item, [name, info['type']])
             
             # Store the full HDF5 path (e.g., '/Data/Pulsed/Exp_001')
             # This is vital for the Dataclass request later
@@ -479,44 +308,6 @@ class HDF5ExplorerDock(QDockWidget):
             # If it's a group, recurse to add its children
             if info["type"] == "Group":
                 self._add_tree_nodes(info.get("children", {}), item)
-            if info["type"] == "Dataset" and info.get("shape", False):
-                self._add_axis_options(name, info, current_path)
-
-    def _add_axis_options(self, name: str, info: dict, path: str):
-        """
-        Adds dataset options to the axis selection combo boxes if they are 1D.
-
-        This method checks if the provided dataset information corresponds to 
-        a 1D dataset (i.e., it has a shape of length 1) and, if so, it adds 
-        the dataset name to both the x-axis and y-axis combo boxes for 
-        selection. It also stores the full path of the dataset in the 
-        `axis_options_path` dictionary, allowing the main application to 
-        retrieve the correct data when the user selects an axis.
-
-        Parameters
-        ----------
-        name : str
-            The name of the dataset, which will be displayed in the combo boxes.
-        info : dict
-            A dictionary containing information about the dataset, 
-            including its shape and type.
-        path : str
-            The full HDF5 path to the dataset, which will be stored for later 
-            retrieval when the user selects this dataset as an axis option.
-
-        Notes
-        -----
-        This method is called for each dataset that has shape information when 
-        building the tree structure, and it ensures that only 1D datasets are 
-        added as options for the axes, as these are typically used for plotting
-        against each other in a 2D plot.
-        """
-
-        if "Analysis" not in path.strip("/"):
-            if len(info["shape"]) == 1:
-                self.axis_options_path[name] = path
-                self.x_axis_combobox.addItem(name)
-                self.y_axis_combobox.addItem(name)
 
 
 if __name__ == "__main__":
@@ -524,4 +315,45 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     explorer = HDF5ExplorerDock()
     explorer.show()
+
+    tree = {
+        '/': {
+            'type': 'Group',
+            'children': {
+                'Analysis': {
+                    'type': 'Group',
+                    'children': {
+                        '20260416-1304-53_SingleExponential': {
+                            'type': 'Group',
+                            'children': {
+                                'ModelTraces': {
+                                    'type': 'Group',
+                                    'children': {
+                                        'fit_x': {'type': 'Dataset', 'shape': (30,)},
+                                        'fit_y': {'type': 'Dataset', 'shape': (30,)},
+                                        'residuals': {'type': 'Dataset', 'shape': (30,)},
+                                        'x': {'type': 'Dataset', 'shape': (30,)},
+                                        'y': {'type': 'Dataset', 'shape': (30,)}
+                                    }
+                                },
+                                'parameters': {'type': 'Dataset'},
+                                'report': {'type': 'Dataset'}
+                            }
+                        }
+                    }
+                },
+                'Data': {
+                    'type': 'Group',
+                    'children': {
+                        'pl_mean': {'type': 'Dataset', 'shape': (30,)},
+                        'pl_raw_mean': {'type': 'Dataset', 'shape': (10, 30, 2)},
+                        'pl_raw_std': {'type': 'Dataset', 'shape': (10, 30, 2)},
+                        'pl_std': {'type': 'Dataset', 'shape': (30,)},
+                        'tau': {'type': 'Dataset', 'shape': (30,)}
+                    }
+                }
+            }
+        }
+    }
+    explorer.update_imported_data_tree(tree)
     sys.exit(app.exec())

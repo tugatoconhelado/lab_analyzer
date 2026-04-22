@@ -20,7 +20,7 @@ class Hdf5Loader:
         structure = self._get_tree_structure()
         return structure
 
-    def fetch_dataset(self, internal_path) -> DataResult | InspectInfo:
+    def fetch_dataset(self, internal_path):
 
         with h5py.File(self.filepath, 'r') as f:
             ds = f[internal_path]

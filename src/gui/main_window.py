@@ -17,11 +17,10 @@ from src.gui.plotting.plot_widget import PlotWidget
 from src.core.style_generator import LineType
 from src.gui.file_explorer import FileExplorerDock
 from src.gui.fitting.fit_dock import FitDock
-from src.gui.console.console import ConsoleWidget
-from src.gui.console.workbench import WorkbenchWidget
+from src.gui.console.workspace import WorkspaceWidget
 from src.gui.file_loader.hdf5_explorer import HDF5ExplorerDock
 from src.gui.log_registry.log_registry import LogRegistryDock
-from src.gui.console.variable_explorer import VariableExplorerDock
+
 
 
 class AnalyzerMainWindow(QMainWindow):
@@ -51,6 +50,14 @@ class AnalyzerMainWindow(QMainWindow):
         self._setup_log_registry()
         self.create_new_plot("Initial Plot")
 
+    def connect_to_bridge(self):
+
+        
+        self.hdf5_explorer.connect_to_bridge(self._bridge)        
+        self._bridge.data_sig.connect(
+            self.plot_data
+        )
+
     def _setup_log_registry(self):
         self.log_registry = LogRegistryDock(parent=self)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.log_registry)
@@ -61,52 +68,13 @@ class AnalyzerMainWindow(QMainWindow):
         and connects them to an in-process kernel.
         """
 
-        self.workbench = WorkbenchWidget(self)
-        self.setCentralWidget(self.workbench)
-        self.variable_explorer = VariableExplorerDock(self.workbench.console.kernel.shell)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.variable_explorer)
-        
-        # Expose the Hub itself to the console so the user can
-        # script the UI (e.g., 'hub.spawn_plot()')
-        self.workbench.console.push_to_console({'hub': self})
-        self.workbench.console.refresh_variable_explorer_sig.connect(
-            self.variable_explorer.explorer.refresh)
-
+        self.workspace = WorkspaceWidget(self)
+        self.setCentralWidget(self.workspace)
 
     def _setup_hdf5_explorer(self):
         
         self.hdf5_explorer = HDF5ExplorerDock(parent=self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.hdf5_explorer)
-
-        ### Gui Logic connections ###
-        self._bridge.imported_data_sig.connect(
-            self.hdf5_explorer.update_imported_data_tree
-        )
-
-        # Preview/Inspect management
-        self.hdf5_explorer.request_inspect_info_sig.connect(
-            self._bridge.fetch_inspect_info
-        )
-        self._bridge.inspect_info_sig.connect(
-            self.hdf5_explorer.update_inspect_info
-        )
-        self.hdf5_explorer.request_preview_sig.connect(
-            self._bridge.fetch_preview_data
-        )
-        self._bridge.preview_data_sig.connect(
-            self.hdf5_explorer.update_preview_plot
-        )
-        self.hdf5_explorer.import_hdf5_sig.connect(
-            self._bridge.import_hdf5_data
-        )
-
-        # Setting axis data
-        self.hdf5_explorer.request_data_sig.connect(
-            self._bridge.fetch_data
-        )
-        self._bridge.data_sig.connect(
-            self.plot_data
-        )
 
     def _setup_fit_dock(self):
 
@@ -222,45 +190,7 @@ if __name__ == "__main__":
         'timestamp': '2026-04-09T13:58:15.277085'
     }
 
-    tree = {
-        '/': {
-            'type': 'Group',
-            'children': {
-                'Analysis': {
-                    'type': 'Group',
-                    'children': {
-                        '20260416-1304-53_SingleExponential': {
-                            'type': 'Group',
-                            'children': {
-                                'ModelTraces': {
-                                    'type': 'Group',
-                                    'children': {
-                                        'fit_x': {'type': 'Dataset', 'shape': (30,)},
-                                        'fit_y': {'type': 'Dataset', 'shape': (30,)},
-                                        'residuals': {'type': 'Dataset', 'shape': (30,)},
-                                        'x': {'type': 'Dataset', 'shape': (30,)},
-                                        'y': {'type': 'Dataset', 'shape': (30,)}
-                                    }
-                                },
-                                'parameters': {'type': 'Dataset'},
-                                'report': {'type': 'Dataset'}
-                            }
-                        }
-                    }
-                },
-                'Data': {
-                    'type': 'Group',
-                    'children': {
-                        'pl_mean': {'type': 'Dataset', 'shape': (30,)},
-                        'pl_raw_mean': {'type': 'Dataset', 'shape': (10, 30, 2)},
-                        'pl_raw_std': {'type': 'Dataset', 'shape': (10, 30, 2)},
-                        'pl_std': {'type': 'Dataset', 'shape': (30,)},
-                        'tau': {'type': 'Dataset', 'shape': (30,)}
-                    }
-                }
-            }
-        }
-    }
+    
     #window.hdf5_explorer.update_imported_data_tree(tree)
     #window.create_new_plot("Test Plot")
     sys.exit(app.exec())

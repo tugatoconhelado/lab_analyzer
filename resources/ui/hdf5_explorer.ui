@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>591</height>
+    <width>320</width>
+    <height>722</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>HDF5 Explorer</string>
   </property>
   <widget class="QWidget" name="hdf5_explorer_widget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,10,0">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="0,10">
     <item>
      <layout class="QVBoxLayout" name="file_management_layout">
       <item>
@@ -38,7 +38,7 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="explorer_layout" stretch="1,2">
+     <layout class="QVBoxLayout" name="explorer_layout" stretch="3">
       <item>
        <widget class="QTreeWidget" name="imported_data_tree">
         <property name="rootIsDecorated">
@@ -48,190 +48,28 @@
          <bool>true</bool>
         </property>
         <attribute name="headerVisible">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="headerStretchLastSection">
          <bool>false</bool>
         </attribute>
         <column>
          <property name="text">
-          <string notr="true">1</string>
+          <string notr="true">File</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Kind</string>
          </property>
         </column>
        </widget>
-      </item>
-      <item>
-       <widget class="QFrame" name="toggle_frame">
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Raised</enum>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_5">
-         <property name="spacing">
-          <number>2</number>
-         </property>
-         <property name="leftMargin">
-          <number>2</number>
-         </property>
-         <property name="topMargin">
-          <number>2</number>
-         </property>
-         <property name="rightMargin">
-          <number>2</number>
-         </property>
-         <property name="bottomMargin">
-          <number>2</number>
-         </property>
-         <item>
-          <layout class="QHBoxLayout" name="toggle_layout">
-           <property name="spacing">
-            <number>0</number>
-           </property>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="display_button">
-             <property name="text">
-              <string>Display</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="inspect_button">
-             <property name="text">
-              <string>Inspect</string>
-             </property>
-             <property name="checkable">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QStackedWidget" name="preview_stackedwidget">
-           <property name="currentIndex">
-            <number>0</number>
-           </property>
-           <widget class="QWidget" name="plot_preview_page">
-            <layout class="QHBoxLayout" name="horizontalLayout_5">
-             <item>
-              <widget class="PlotWidget" name="data_preview_plot" native="true"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="img_preview_page">
-            <layout class="QHBoxLayout" name="horizontalLayout_8">
-             <item>
-              <widget class="PlotWidget" name="heatmap" native="true"/>
-             </item>
-            </layout>
-           </widget>
-           <widget class="QWidget" name="inspect_page">
-            <layout class="QHBoxLayout" name="horizontalLayout_6">
-             <item>
-              <widget class="QScrollArea" name="inspect_scrollarea">
-               <property name="widgetResizable">
-                <bool>true</bool>
-               </property>
-               <widget class="QWidget" name="inspect_widget">
-                <property name="geometry">
-                 <rect>
-                  <x>0</x>
-                  <y>0</y>
-                  <width>74</width>
-                  <height>16</height>
-                 </rect>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_6" stretch="5">
-                 <property name="spacing">
-                  <number>0</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>0</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>0</number>
-                 </property>
-                 <item>
-                  <layout class="QFormLayout" name="inspect_layout"/>
-                 </item>
-                </layout>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="data_selection_layout">
-      <item>
-       <layout class="QVBoxLayout" name="axis_selection_layout" stretch="1,1">
-        <item>
-         <layout class="QHBoxLayout" name="y_axis_selection_layout" stretch="1,1">
-          <item>
-           <widget class="QLabel" name="y_axis_label">
-            <property name="text">
-             <string>Y Data</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="y_axis_combobox"/>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QHBoxLayout" name="x_axis_selection_layout" stretch="1,1">
-          <item>
-           <widget class="QLabel" name="x_axis_label">
-            <property name="text">
-             <string>X Data</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QComboBox" name="x_axis_combobox"/>
-          </item>
-         </layout>
-        </item>
-       </layout>
       </item>
      </layout>
     </item>
    </layout>
   </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>PlotWidget</class>
-   <extends>QWidget</extends>
-   <header>pyqtgraph</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

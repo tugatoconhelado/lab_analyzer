@@ -32,10 +32,10 @@ class LogModel(QAbstractTableModel):
         self._logs = [] # List of dicts: {"time":..., "level":..., "name":..., "msg":...}
         self.columns = ["Time", "Level", "Origin", "Message"]
 
-    def rowCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent = QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._logs)
 
-    def columnCount(self, parent: QModelIndex | QPersistentModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent = QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self.columns)
 
     def data(self, index, role=int(Qt.ItemDataRole.DisplayRole)):

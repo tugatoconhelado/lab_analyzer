@@ -72,31 +72,6 @@ class VariableExplorer(QTableWidget):
             self.setItem(i, 2, QTableWidgetItem(val_str))
 
 
-class VariableExplorerDock(QDockWidget):
-    """
-    A dockable widget that contains the VariableExplorer.
-
-    This class wraps the VariableExplorer in a QDockWidget, allowing it to be 
-    docked within the main application window. It takes a reference to the 
-    Jupyter kernel's shell to pass to the VariableExplorer.
-
-    Attributes
-    ----------
-    explorer : VariableExplorer
-        The instance of VariableExplorer contained within this dock widget.
-    
-    Methods
-    -------
-    __init__(kernel_shell, parent=None)
-        Initializes the dock widget and creates the VariableExplorer with the provided kernel shell.
-    """
-
-    def __init__(self, kernel_shell, parent=None):
-        super().__init__(parent)
-        self.explorer = VariableExplorer(kernel_shell)
-        self.setWidget(self.explorer)
-        self.setWindowTitle("Variable Explorer")
-
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication

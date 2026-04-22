@@ -85,11 +85,9 @@ class ConsoleWidget(QWidget):
             
             if state == 'idle':
                 # The kernel has finished the task (or crashed/errored)
-                # Now we refresh our Variable Explorer!
                 self.refresh_variable_explorer_sig.emit()
-                print("Kernel is IDLE - Refreshing Explorer")
             elif state == 'busy':
-                print("Kernel is BUSY - Processing data...")
+                pass
 
 
 if __name__ == "__main__":

@@ -1,5 +1,3 @@
-# src/main.py
-
 import sys
 from PyQt5.QtWidgets import QApplication
 from src.gui.main_window import AnalyzerMainWindow
@@ -16,6 +14,7 @@ def main():
 
     window = AnalyzerMainWindow(controller)
     window.show()
+    window.connect_to_bridge()
     sys.exit(app.exec())
 
 if __name__ == "__main__":

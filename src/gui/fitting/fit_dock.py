@@ -94,33 +94,33 @@ class FitDock(QDockWidget):
             - 'max': The maximum allowed value for the parameter (float)
         """
 
-        self.parameters_table.setRowCount(len(params))
-        self.parameters_table.setColumnCount(5)
-        self.parameters_table.setHorizontalHeaderLabels(
+        self.parameters_table.setColumnCount(len(params))
+        self.parameters_table.setRowCount(5)
+        self.parameters_table.setVerticalHeaderLabels(
             ["Parameter", "Value", "Fixed", "Min", "Max"])
         for i, param in enumerate(params):
             # Column 0: Name   
             name_item = QTableWidgetItem(param["name"])
-            self.parameters_table.setItem(i, 0, name_item)
+            self.parameters_table.setItem(0, 1, name_item)
             
             # Column 1: Value (Editable)
             val_item = QTableWidgetItem(f"{param['value']:.4f}")
-            self.parameters_table.setItem(i, 1, val_item)
+            self.parameters_table.setItem(1, i, val_item)
             
             # Column 2: Fixed Checkbox
             check_item = QTableWidgetItem()
             check_item.setCheckState(
                 Qt.CheckState.Unchecked if param["vary"] else Qt.CheckState.Checked
             )
-            self.parameters_table.setItem(i, 2, check_item)
+            self.parameters_table.setItem(2, i, check_item)
             
             # Column 3: Display min for reference
             min_item = QTableWidgetItem(f"{param['min']}")
-            self.parameters_table.setItem(i, 3, min_item)
+            self.parameters_table.setItem(3, i, min_item)
 
              # Column 3: Display max for reference
             max_item = QTableWidgetItem(f"{param['max']}")
-            self.parameters_table.setItem(i, 4, max_item)
+            self.parameters_table.setItem(4, i, max_item)
 
     @Slot(str)
     def update_fit_report(self, report):
