@@ -5,13 +5,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from src.core.model_manager import ModelManager
 from src.core.data_loader import Hdf5Loader
-from src.core.structures import InspectInfo, DataResult
+from src.core.structures import InspectInfo, Dataset, WorkbenchAsset
+from src.core.workbench import WorkbenchRegistry
 
 
 class AnalysisEngine:
 
-    def __init__(self, plugin_path):
+    def __init__(self, plugin_path, registry: WorkbenchRegistry):
         # The Engine coordinates the specialized classes
+        self.registry = registry
         self.model_manager = ModelManager(plugin_path)
         self.loader = Hdf5Loader()
         self.data = DataAccessProxy(
@@ -20,8 +22,8 @@ class AnalysisEngine:
         )
         
         # State: What are we working on right now?
-        self.active_x = DataResult()
-        self.active_y = DataResult()
+        self.active_x = Dataset()
+        self.active_y = Dataset()
         self.active_axis = []
         self.active_model = None
         self.fit_result = None
@@ -47,12 +49,23 @@ class AnalysisEngine:
     def get_info(self, path) -> InspectInfo:
 
         return self.loader.fetch_inspect_info(path)
+    
+    def get_preview_data(self, path) -> Dataset:
+        data = self.loader.fetch_dataset(path)
+        if not isinstance(data, Dataset):
+            raise TypeError(f"Expected a dataset at '{path}', but got {type(data).__name__}")
+        return data
 
-    def get_data(self, path) -> DataResult:
+    def get_data(self, path) -> Dataset:
 
         data = self.loader.fetch_dataset(path)
-        if not isinstance(data, DataResult):
+        if not isinstance(data, Dataset):
             raise TypeError(f"Expected a dataset at '{path}', but got {type(data).__name__}")
+        self.registry.add(
+            name=path.split("/")[-1],
+            obj=data,
+            source="HDF5 File"
+        )
         return data
 
     def select_data(self, x_path: str, y_path: str):

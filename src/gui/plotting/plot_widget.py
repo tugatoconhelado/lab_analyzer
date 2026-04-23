@@ -10,7 +10,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-from src.core.structures import InspectInfo, DataResult, LineConfig
+from src.core.structures import InspectInfo, Dataset, LineConfig
 from src.gui.plotting.mpl_canvas import MplCanvas
 
 

@@ -43,31 +43,23 @@ class ConsoleWidget(QWidget):
 
     refresh_variable_explorer_sig = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, kernel_manager, kernel_client):
         super().__init__(parent)
         layout = QVBoxLayout(self)
 
 
-        self.kernel_manager = QtInProcessKernelManager()
-        self.kernel_manager.start_kernel()
-        self.kernel = self.kernel_manager.kernel
-        
-        self.kernel_client = self.kernel_manager.client()
-        self.kernel_client.start_channels()
-
         self.console = RichJupyterWidget()
-        self.console.kernel_manager = self.kernel_manager
-        self.console.kernel_client = self.kernel_client
+        self.console.kernel_manager = kernel_manager
+        self.console.kernel_client = kernel_client
 
         self.console.execute("%matplotlib inline")
-
-        self.kernel_client.iopub_channel.message_received.connect(self.handle_iopub_message)
+        self.console.kernel_client.iopub_channel.message_received.connect(self.handle_iopub_message)
 
         layout.addWidget(cast(QWidget, self.console))
 
     def push_to_console(self, variables: dict):
         """Inject objects from the GUI into the console namespace."""
-        self.kernel.shell.push(variables)
+        self.console.kernel_manager.kernel.shell.push(variables)
 
     def execute(self, code: str):
         """Execute code in the console's kernel."""
@@ -93,7 +85,11 @@ class ConsoleWidget(QWidget):
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    widget = ConsoleWidget()
+    kernel_manager = QtInProcessKernelManager()
+    kernel_manager.start_kernel()
+    kernel_client = kernel_manager.client()
+    kernel_client.start_channels()
+    widget = ConsoleWidget(parent=None, kernel_manager=kernel_manager, kernel_client=kernel_client)
     widget.resize(800, 600)
     widget.show()
     sys.exit(app.exec())

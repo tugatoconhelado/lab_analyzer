@@ -34,7 +34,7 @@ class MplCanvas(FigureCanvasQTAgg):
         self.draw()
 
     def add_data_line(self, x_data, y_data):
-        """Standard method to refresh the plot with new DataResult."""
+        """Standard method to refresh the plot with new Dataset."""
         line = self.axes.plot(x_data.data, y_data.data, 'o', color='blue', label="Data")[0]
         self.axes.set_ylabel(f"{y_data.name}")
         self.axes.set_xlabel(f"{x_data.name}")

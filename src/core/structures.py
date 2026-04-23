@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 
@@ -19,17 +20,25 @@ class InspectInfo:
     filters: List[str] = field(default_factory=list) # e.g. ['gzip']
 
 @dataclass
-class DataResult:
+class Dataset:
     path: str = ""
     name: str = ""
     data: np.ndarray = field(default_factory=lambda: np.array([]))
     ndim: int = 0
+    shape: Optional[tuple] = None
     timestamp: float = 0.0
 
 @dataclass
+class Group:
+    path: str = ""
+    name: str = ""
+    children: Dict[str, Any] = field(default_factory=dict)
+    shape: Optional[tuple] = None
+
+@dataclass
 class FitTraces:
-    x_data: DataResult
-    y_data: DataResult
+    x_data: Dataset
+    y_data: Dataset
     fit_x: np.ndarray = field(default_factory=lambda: np.array([]))
     fit_y: np.ndarray = field(default_factory=lambda: np.array([]))
     residuals: np.ndarray = field(default_factory=lambda: np.array([]))
@@ -63,3 +72,11 @@ class AxesConfig:
     # --- Export ---
     tight_layout: bool = True 
     use_sci_notation: bool = True
+
+@dataclass
+class WorkbenchAsset:
+
+    name : str
+    content : Any
+    asset_type : str
+    timestamp : datetime = field(default_factory=datetime.now)

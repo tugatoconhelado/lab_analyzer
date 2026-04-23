@@ -10,7 +10,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from src.core.structures import DataResult, LineConfig
+from src.core.structures import Dataset, LineConfig
 from src.gui.bridge import AnalyzerBridge
 from src.gui.plotting.plot_config import PlotControlDock
 from src.gui.plotting.plot_widget import PlotWidget
@@ -52,11 +52,13 @@ class AnalyzerMainWindow(QMainWindow):
 
     def connect_to_bridge(self):
 
-        
         self.hdf5_explorer.connect_to_bridge(self._bridge)        
         self._bridge.data_sig.connect(
             self.plot_data
         )
+        
+        self.workspace.workbench.set_registry(self._bridge.registry)
+        self.workspace.connect_to_bridge(self._bridge)
 
     def _setup_log_registry(self):
         self.log_registry = LogRegistryDock(parent=self)
@@ -68,7 +70,9 @@ class AnalyzerMainWindow(QMainWindow):
         and connects them to an in-process kernel.
         """
 
-        self.workspace = WorkspaceWidget(self)
+        kernel_manager = self._bridge.get_kernel_manager()
+        kernel_client = self._bridge.get_kernel_client()
+        self.workspace = WorkspaceWidget(self, kernel_manager, kernel_client)
         self.setCentralWidget(self.workspace)
 
     def _setup_hdf5_explorer(self):
@@ -138,7 +142,7 @@ class AnalyzerMainWindow(QMainWindow):
         plot = list(self._open_plots.values())[0]
         plot.plot_canvas.apply_line_config(line, config)
 
-    @Slot(DataResult, DataResult)
+    @Slot(Dataset, Dataset)
     def plot_data(self, x_data, y_data):
 
         plot = list(self._open_plots.values())[0]

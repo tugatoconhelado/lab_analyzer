@@ -10,7 +10,7 @@ import pyqtgraph as pg
 import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-from src.core.structures import InspectInfo, DataResult
+from src.core.structures import InspectInfo, Dataset
 from src.gui.file_loader.file_previewer import FilePreviewer
 
 
@@ -132,6 +132,9 @@ class HDF5ExplorerDock(QDockWidget):
         bridge.imported_data_sig.connect(
             self.update_imported_data_tree
         )
+        self.load_to_workbench.connect(
+            bridge.fetch_data
+        )
 
 
     def show_context_menu(self, position: QPoint):
@@ -152,8 +155,10 @@ class HDF5ExplorerDock(QDockWidget):
 
     def handle_selection(self, item):
         path = item.data(0, Qt.ItemDataRole.UserRole)["path"]
-        print(f"User selected: {path}")
-        self.load_to_workbench.emit(path)
+        kind = item.data(0, Qt.ItemDataRole.UserRole)["kind"]
+        print(f"User selected: {path}, Kind: {kind}")
+        if kind == "Dataset":
+            self.load_to_workbench.emit(path)
 
     @Slot(QTreeWidgetItem, QTreeWidgetItem)
     def _on_tree_selection_changed(self, current, previous):

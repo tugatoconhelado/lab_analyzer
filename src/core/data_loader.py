@@ -5,7 +5,7 @@ import time
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
-from src.core.structures import InspectInfo, DataResult
+from src.core.structures import InspectInfo, Dataset
 
 
 class Hdf5Loader:
@@ -31,11 +31,12 @@ class Hdf5Loader:
             if isinstance(ds, h5py.Dataset):
                 array = ds[:]
                 array = np.array(array)
-                return DataResult(
+                return Dataset(
                     path=internal_path,
                     name=internal_path.split("/")[-1] or "/",
                     data=array,
                     ndim=array.ndim,
+                    shape=array.shape,
                     timestamp=time.time()
                 )
 

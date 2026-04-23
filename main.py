@@ -9,8 +9,7 @@ def main():
 
     app = QApplication(sys.argv)
 
-    engine = AnalysisEngine(r"models")
-    controller = AnalyzerBridge(engine)
+    controller = AnalyzerBridge()
 
     window = AnalyzerMainWindow(controller)
     window.show()

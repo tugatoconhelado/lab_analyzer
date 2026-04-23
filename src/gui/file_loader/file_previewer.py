@@ -10,7 +10,7 @@ import pyqtgraph as pg
 import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-from src.core.structures import InspectInfo, DataResult
+from src.core.structures import InspectInfo, Dataset
 
 
 class FilePreviewer(QWidget):
@@ -187,12 +187,12 @@ class FilePreviewer(QWidget):
         while self.inspect_layout.rowCount() > 0:
             self.inspect_layout.removeRow(0)
 
-    @Slot(DataResult)
-    def update_preview_plot(self, data: DataResult):
+    @Slot(Dataset)
+    def update_preview_plot(self, data: Dataset):
         """
         Updates the preview plot based on the provided data.
         
-        This method takes a `DataResult` object containing the data to be 
+        This method takes a `Dataset` object containing the data to be 
         previewed and updates the appropriate plot (line plot for 1D data,
         image plot for 2D/3D data). It checks the dimensionality of the data
         and updates the preview accordingly. For 1D data, it updates the line
@@ -201,7 +201,7 @@ class FilePreviewer(QWidget):
 
         Parameters
         ----------
-        data : DataResult
+        data : Dataset
             A dataclass containing the data to be previewed, including its dimensionality and the actual
             data array.
 
