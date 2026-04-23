@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from src.core.model_manager import ModelManager
 from src.core.data_loader import Hdf5Loader
-from src.core.structures import InspectInfo, Dataset, WorkbenchAsset
+from src.core.structures import InspectInfo, Dataset, WorkbenchAsset, FitResult, Trace
 from src.core.workbench import WorkbenchRegistry
 
 
@@ -22,8 +22,8 @@ class AnalysisEngine:
         )
         
         # State: What are we working on right now?
-        self.active_x = Dataset()
-        self.active_y = Dataset()
+        self.active_x = None
+        self.active_y = None
         self.active_axis = []
         self.active_model = None
         self.fit_result = None
@@ -31,7 +31,7 @@ class AnalysisEngine:
         self.fit_x = None
         self.file = ""
 
-    def load_file(self, path):
+    def load_file_structure(self, path):
         """
         Delegates to the loader to get the file structure.
         The GUI calls this to populate the TreeWidget.
@@ -40,7 +40,7 @@ class AnalysisEngine:
         structure = self.loader.load_file(self.file)
         return structure
 
-    def load_models(self):
+    def read_available_models(self):
         """Wrapper function to provide model list to the UI."""
         # Sort it so the dropdown always looks the same
         available_models = self.model_manager.load_plugins()
@@ -56,26 +56,40 @@ class AnalysisEngine:
             raise TypeError(f"Expected a dataset at '{path}', but got {type(data).__name__}")
         return data
 
-    def get_data(self, path) -> Dataset:
+    def load_dataset(self, path) -> WorkbenchAsset:
 
         data = self.loader.fetch_dataset(path)
         if not isinstance(data, Dataset):
             raise TypeError(f"Expected a dataset at '{path}', but got {type(data).__name__}")
-        self.registry.add(
+        asset = self.registry.add(
             name=path.split("/")[-1],
             obj=data,
             source="HDF5 File"
         )
-        return data
+        return asset
 
-    def select_data(self, x_path: str, y_path: str):
+    def select_data(self, x_key: str, y_key: str):
         """
         Requests specific arrays from the loader and stores them 
         as the 'active' state for fitting.
         """
-        self.active_x = self.get_data(x_path)
-        self.active_y = self.get_data(y_path)
-        self.active_axis = [x_path, y_path]
+        self.active_x = self.registry.get(x_key)
+        self.active_y = self.registry.get(y_key)
+
+        if self.active_x is None or self.active_y is None:
+            raise ValueError(f"Could not find datasets for keys: '{x_key}', '{y_key}'")
+        
+        self.active_axis = [x_key, y_key]
+        self.active_trace = Trace(
+            name=f"trace_{x_key}_{y_key}",
+            x_ds=self.active_x,
+            y_ds=self.active_y
+        )
+        self.registry.add(
+            name=self.active_trace.name,
+            obj=self.active_trace,
+            source="Trace"
+        )
 
         return self.active_x, self.active_y
 
@@ -91,10 +105,13 @@ class AnalysisEngine:
         """
         if self.active_model is None:
             raise ValueError("No model selected.")
+        if self.active_x is None or self.active_y is None:
+            raise ValueError("No data selected for fitting.")
+
         params = self.active_model.params
         self.fit_result = self.active_model.fit(
-            self.active_y.data, 
-            x=self.active_x.data, 
+            self.active_trace.y, 
+            x=self.active_trace.x, 
             params=params
         )
         if not self.fit_result.success:
@@ -107,12 +124,26 @@ class AnalysisEngine:
         self.fit_x = userkws.get('x')
         self.fit_y = self.fit_result.best_fit
         fit_params = self.active_model.get_parameter_list(self.fit_result.params)
+        print("Sending Fitted parameters:", fit_params)
 
-        return self.fit_result, fit_params
+        fit_result = FitResult(
+            name=f"fit_{self.active_model.model_name}_{self.active_axis[-1]}",
+            model=self.active_model,
+            lmfit_result=self.fit_result,
+            source_trace=self.active_trace
+        )
+        self.registry.add(
+            name=fit_result.name,
+            obj=fit_result,
+            source="Fit Result"
+        )
+        return fit_result, fit_params
 
     def guess_params(self):
         if self.active_model is None:
             raise ValueError("No model selected.")
+        if self.active_x is None or self.active_y is None:
+            raise ValueError("No data selected for guessing parameters.")
         x_data = self.active_x.data
         y_data = self.active_y.data
         params = self.active_model.guess_initial_params(x_data, y_data)
@@ -130,19 +161,6 @@ class AnalysisEngine:
             self.active_model.name,
             self.active_axis
         )
-
-    def load_fit(self, filepath:str):
-
-        res = self.loader.load_fit(filepath, "20260416-1304-53_SingleExponential")
-        if res:
-            traces, params_list, report = res
-            self.active_x = traces["x"]
-            self.active_y = traces["y"]
-            self.fit_x = traces["fit_x"]
-            self.fit_y = traces["fit_y"]
-            params = self.apply_parameter_settings(params_list)
-
-            return params
 
     def apply_parameter_settings(self, params_list):
         """
@@ -198,20 +216,6 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    engine = AnalysisEngine(r"models")
-    engine.load_file(r"ex_data.h5")
-    x_data, y_data = engine.select_data("/Data/tau", "/Data/pl_mean")
-    models = engine.load_models()
-    params = engine.select_model("SingleExponential")
-    data = engine.data.pl_mean
-    print(data)
-    engine.guess_params()
-    fit_result = engine.run_fit()
-
-    #engine.save_fit(r"ex_data.h5")
-
-    fig, ax = plt.subplots()
-    ax.plot(engine.active_x.data, engine.active_y.data, "bo") # type: ignore
-    ax.plot(engine.fit_x, engine.fit_y, "r-") # type: ignore
-
-    plt.show()
+    engine = AnalysisEngine(r"models", None) # type: ignore
+    models = engine.read_available_models()
+    print("Available models:", models)

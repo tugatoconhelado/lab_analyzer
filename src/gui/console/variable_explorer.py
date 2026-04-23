@@ -37,8 +37,12 @@ class VariableExplorer(QTableWidget):
         self.shell = kernel_shell
         self.setColumnCount(3)
         self.setHorizontalHeaderLabels(["Name", "Type", "Value/Shape"])
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.verticalHeader().setVisible(False)
+        h_header = self.horizontalHeader()
+        if h_header is not None:
+            h_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        v_header = self.verticalHeader()
+        if v_header is not None:
+            v_header.setVisible(False)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Refresh timer (updates every 2 seconds to save CPU)
@@ -84,6 +88,6 @@ if __name__ == "__main__":
     kernel_client = kernel_manager.client()
     kernel_client.start_channels()
 
-    window = VariableExplorerDock(kernel.shell)
+    window = VariableExplorer(kernel.shell)
     window.show()
     sys.exit(app.exec())

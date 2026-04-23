@@ -22,6 +22,8 @@ class AnalyzerBridge(QObject):
     params_sig = Signal(list)
     residuals_sig = Signal(np.ndarray, np.ndarray)
     fit_report_sig = Signal(str)
+    models_sig = Signal(list)
+    refresh_registry_sig = Signal(dict)
 
 
     def __init__(self):
@@ -33,21 +35,22 @@ class AnalyzerBridge(QObject):
         self.kernel_client.start_channels()
 
         self.registry = WorkbenchRegistry(self.kernel_manager.kernel.shell)
-        self.engine = AnalysisEngine(plugin_path="", registry=self.registry)
+        self.engine = AnalysisEngine(plugin_path=r"models", registry=self.registry)
 
     def get_kernel_client(self):
         return self.kernel_client
     
     def get_kernel_manager(self):
         return self.kernel_manager
-
+    
     @Slot()
     def get_models(self):
         """
         Grabs the list of models and parameters from the model_manager
         """
-        models = self.engine.load_models()
-        return models
+        models = self.engine.read_available_models()
+        print(f"Loaded models: {models}")
+        self.models_sig.emit(models)
 
     @Slot(str)
     def set_model(self, model_name: str):
@@ -55,13 +58,13 @@ class AnalyzerBridge(QObject):
         Called when the user selects a model in the GUI dropdown.
         """
         model_params = self.engine.select_model(model_name)
+        print(f"Loaded model '{model_name}' with parameters: {model_params}")
         self.params_sig.emit(model_params)
-        return model_params
 
     @Slot(str)
     def import_hdf5_data(self, filepath):
 
-        structure = self.engine.load_file(filepath)
+        structure = self.engine.load_file_structure(filepath)
         self.imported_data_sig.emit(structure)
 
     @Slot(str)
@@ -80,28 +83,39 @@ class AnalyzerBridge(QObject):
     @Slot(str)
     def fetch_data(self, data_path: str):
 
-        self.engine.get_data(data_path)
+        self.engine.load_dataset(data_path)
 
-    @Slot()
-    def perform_fit(self):
+    @Slot(str, str, str)
+    def run_fit(self, x_key: str, y_key: str, model_name: str):
 
-        result, fitted_params = self.engine.run_fit()
-        if result or fitted_params is None:
-            raise ValueError("Fit failed or returned no parameters.")
+        x_data, y_data = self.engine.select_data(x_key, y_key)
+
+        if self.engine.active_model is None:
+            raise ValueError("No model selected for fitting.")
+        if self.engine.active_model.model_name != model_name:
+            self.engine.select_model(model_name)
+
+        fit_result, fitted_params = self.engine.run_fit()
+        print("Fit result:", fit_result)
+        print("Fitted parameters:", fitted_params)
+        # if result or fitted_params is None:
+        #     raise ValueError("Fit failed or returned no parameters.")
         
-        x_data = result.userkws['x']
-        fitted_data = result.best_fit
-        residuals = result.residual
-        report = result.fit_report()
+        fit_x_data = fit_result.trace.x
+        fitted_data = fit_result.curve.data
+        residuals = fit_result.residuals.data
+        report = fit_result.report
 
-        self.fit_data_sig.emit(x_data, fitted_data)
+        self.data_sig.emit(x_data, y_data)
+        self.fit_data_sig.emit(fit_x_data, fitted_data)
         self.params_sig.emit(fitted_params)
-        self.residuals_sig.emit(x_data, residuals)
+        self.residuals_sig.emit(fit_x_data, residuals)
         self.fit_report_sig.emit(report)
 
-    @Slot()
-    def guess_parameters(self):
+    @Slot(str, str)
+    def guess_parameters(self, x_key: str, y_key: str):
 
+        x_data, y_data = self.engine.select_data(x_key, y_key)
         params = self.engine.guess_params()
         self.params_sig.emit(params)
 

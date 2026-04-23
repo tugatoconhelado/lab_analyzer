@@ -136,7 +136,6 @@ class HDF5ExplorerDock(QDockWidget):
             bridge.fetch_data
         )
 
-
     def show_context_menu(self, position: QPoint):
         # 3. Find the item at the clicked position
         item = self.imported_data_tree.itemAt(position)

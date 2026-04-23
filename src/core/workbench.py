@@ -18,11 +18,10 @@ class WorkbenchRegistry(QObject):
         self._data_store = {}
         self._metadata = {}
 
-    def add(self, name, obj, source="User"):
+    def add(self, name, obj, source="User") -> WorkbenchAsset:
         """Called by Engine or ModelManager."""
         obj_type = type(obj).__name__
         asset = WorkbenchAsset(name, obj, asset_type=obj_type)
-        print(f"Adding to Workbench: {name}, Type: {obj_type}, Source: {source}")
         self._data_store[name] = asset
         self._metadata[name] = {
             "name": name,
@@ -31,12 +30,16 @@ class WorkbenchRegistry(QObject):
             "shape": str(getattr(obj, 'shape', 'N/A'))
         }
         if self.shell is not None:
-            print(f"Injecting '{name}' into IPython namespace")
-            self.shell.user_ns[name] = asset
+            self.shell.user_ns[name] = asset.content
         self.registry_changed.emit()
+        print(f"Added '{name}' of type '{obj_type}' to WorkbenchRegistry.")
+        return asset
 
     def get(self, name):
-        return self._data_store.get(name)
+        item = self._data_store.get(name, None)
+        if item is None:
+            raise KeyError(f"No item named '{name}' found in WorkbenchRegistry.")
+        return item.content
 
 
 if __name__ == '__main__':

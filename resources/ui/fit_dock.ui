@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>576</width>
-    <height>592</height>
+    <height>751</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Fit</string>
   </property>
   <widget class="QWidget" name="fit_widget">
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,1,5,5">
     <item>
      <layout class="QHBoxLayout" name="model_selection_layout" stretch="1,2,1">
       <item>
@@ -37,11 +37,40 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,4">
+     <layout class="QHBoxLayout" name="axis_layout" stretch="1,1,1">
+      <item>
+       <widget class="QLabel" name="data_label">
+        <property name="text">
+         <string>Data</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="x_combo"/>
+      </item>
+      <item>
+       <widget class="QComboBox" name="y_combo"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout_4" stretch="1,7">
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="3,1,1,1">
         <item>
          <widget class="QLabel" name="parameters_label">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>32</height>
+           </size>
+          </property>
           <property name="text">
            <string>Parameters</string>
           </property>
@@ -93,7 +122,7 @@
          <x>0</x>
          <y>0</y>
          <width>550</width>
-         <height>242</height>
+         <height>279</height>
         </rect>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_3">

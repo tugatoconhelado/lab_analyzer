@@ -59,6 +59,8 @@ class ConsoleWidget(QWidget):
 
     def push_to_console(self, variables: dict):
         """Inject objects from the GUI into the console namespace."""
+        if self.console.kernel_manager is None:
+            raise RuntimeError("Kernel manager is not set. Cannot push variables to console.")
         self.console.kernel_manager.kernel.shell.push(variables)
 
     def execute(self, code: str):
@@ -77,7 +79,7 @@ class ConsoleWidget(QWidget):
             
             if state == 'idle':
                 # The kernel has finished the task (or crashed/errored)
-                self.refresh_variable_explorer_sig.emit()
+                self.refresh_variable_explorer_sig.emit() # type: ignore
             elif state == 'busy':
                 pass
 

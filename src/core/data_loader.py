@@ -34,10 +34,7 @@ class Hdf5Loader:
                 return Dataset(
                     path=internal_path,
                     name=internal_path.split("/")[-1] or "/",
-                    data=array,
-                    ndim=array.ndim,
-                    shape=array.shape,
-                    timestamp=time.time()
+                    data=array
                 )
 
         raise TypeError(

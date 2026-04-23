@@ -57,8 +57,16 @@ class AnalyzerMainWindow(QMainWindow):
             self.plot_data
         )
         
-        self.workspace.workbench.set_registry(self._bridge.registry)
         self.workspace.connect_to_bridge(self._bridge)
+        self.workspace.console.push_to_console({'hub': self.workspace})  # Expose the workspace to the console as 'hub'
+
+        self.fit_dock.connect_to_bridge(self._bridge)
+        self._bridge.fit_data_sig.connect(
+            self.plot_fit_data
+        )
+        self._bridge.residuals_sig.connect(
+            self.plot_fit_residuals
+        )
 
     def _setup_log_registry(self):
         self.log_registry = LogRegistryDock(parent=self)
@@ -86,34 +94,6 @@ class AnalyzerMainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.fit_dock)
         self.tabifyDockWidget(self.file_explorer, self.fit_dock)
         self.file_explorer.raise_()
-
-        # Managing fitting events
-        self.fit_dock.fit_button.clicked.connect(
-            self._bridge.perform_fit
-        )
-        self._bridge.fit_data_sig.connect(
-            self.plot_fit_data
-        )
-        self._bridge.residuals_sig.connect(
-            self.plot_fit_residuals
-        )
-        self._bridge.fit_report_sig.connect(
-            self.fit_dock.update_fit_report
-        )
-
-        # Model selection and parameter setting
-        self.fit_dock.request_models_sig.connect(
-            self._bridge.get_models
-        )
-        self.fit_dock.select_model_sig.connect(
-            self._bridge.set_model
-        )
-        self._bridge.params_sig.connect(
-            self.fit_dock.update_parameters_table
-        )
-        self.fit_dock.guess_button.clicked.connect(
-            self._bridge.guess_parameters
-        )
 
     def _setup_file_explorer(self):
 

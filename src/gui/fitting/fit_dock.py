@@ -43,6 +43,8 @@ class FitDock(QDockWidget):
 
     select_model_sig = Signal(str)
     request_models_sig = Signal()
+    run_fit_sig = Signal(str, str, str)  # x_key, y_key, model_name
+    guess_parameters_sig = Signal(str, str)  # x_key, y_key
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -64,6 +66,44 @@ class FitDock(QDockWidget):
             self.request_models_sig.emit
         )
 
+    def connect_to_bridge(self, bridge):
+
+        self.registry_ref = bridge.registry
+        self.registry_ref.registry_changed.connect(
+            self.refresh_selectors
+        )
+
+        # Managing fitting events
+        self.fit_button.clicked.connect(
+            self.handle_run_fit
+        )
+        self.run_fit_sig.connect(
+            bridge.run_fit
+        )
+        bridge.fit_report_sig.connect(
+            self.update_fit_report
+        )
+
+        # Model selection and parameter setting
+        self.request_models_sig.connect(
+            bridge.get_models
+        )
+        bridge.models_sig.connect(
+            self.refresh_models
+        )
+        self.select_model_sig.connect(
+            bridge.set_model
+        )
+        bridge.params_sig.connect(
+            self.update_parameters_table
+        )
+        self.guess_button.clicked.connect(
+            self.handle_guess_params
+        )
+        self.guess_parameters_sig.connect(
+            bridge.guess_parameters
+        )
+
     def select_model(self, model):
         """Emits the select_model_sig with the selected model name."""
         self.select_model_sig.emit(model)
@@ -71,7 +111,7 @@ class FitDock(QDockWidget):
     @Slot(list)
     def refresh_models(self, models: list):
         """Refreshes the model selection dropdown with a new list of models."""
-
+        print(f"Received model list: {models}")
         self.models_combobox.clear()
         self.models_combobox.addItems(models)
 
@@ -101,7 +141,7 @@ class FitDock(QDockWidget):
         for i, param in enumerate(params):
             # Column 0: Name   
             name_item = QTableWidgetItem(param["name"])
-            self.parameters_table.setItem(0, 1, name_item)
+            self.parameters_table.setItem(0, i, name_item)
             
             # Column 1: Value (Editable)
             val_item = QTableWidgetItem(f"{param['value']:.4f}")
@@ -136,12 +176,49 @@ class FitDock(QDockWidget):
 
         self.fit_report_label.setText(report)
 
+    @Slot()
+    def refresh_selectors(self):
+        """Updates the dropdowns with current Registry keys."""
+        # Save current selections so they don't reset to index 0 on every update
+        current_x = self.x_combo.currentText()
+        current_y = self.y_combo.currentText()
 
+        self.x_combo.clear()
+        self.y_combo.clear()
+        
+        # Get keys from the Registry warehouse
+        keys = list(self.registry_ref._data_store.keys())
+        self.x_combo.addItems(keys)
+        self.y_combo.addItems(keys)
 
+        # Restore previous selection if it still exists
+        self.x_combo.setCurrentText(current_x)
+        self.y_combo.setCurrentText(current_y)
+
+    def handle_run_fit(self):
+        """Emits the run_fit_sig with the selected x, y, and model."""
+        x_key = self.x_combo.currentText()
+        y_key = self.y_combo.currentText()
+        model_name = self.models_combobox.currentText()
+        self.run_fit_sig.emit(x_key, y_key, model_name)
+
+    def handle_guess_params(self):
+        """Emits the guess_parameters signal with the selected x and y keys."""
+        x_key = self.x_combo.currentText()
+        y_key = self.y_combo.currentText()
+        self.guess_parameters_sig.emit(x_key, y_key)
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
+    import numpy as np
     app = QApplication(sys.argv)
     widget = FitDock()
     widget.show()
+
+    params = [
+        {'name': 'T1', 'value': 55.5, 'stderr': 0.0, 'min': -np.inf, 'max': np.inf, 'vary': True},
+        {'name': 'amplitude', 'value': 0.2, 'stderr': 0.0, 'min': -np.inf, 'max': np.inf, 'vary': True},
+        {'name': 'background', 'value': 1.0, 'stderr': 0.0, 'min': -np.inf, 'max': np.inf, 'vary': True}
+    ]
+    widget.update_parameters_table(params)
     sys.exit(app.exec())
