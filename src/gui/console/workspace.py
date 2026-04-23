@@ -84,7 +84,10 @@ class WorkbenchExplorer(QTreeView):
         # 2. Setup visual behavior
         header = self.header()
         if header is not None:
-            header.setSectionResizeMode(QHeaderView.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.Stretch) # Column 0 adjusts to text
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  
+        width = 600
         self.setEditTriggers(QTreeView.NoEditTriggers) # Read-only
         self.setSelectionBehavior(QTreeView.SelectRows)
 
