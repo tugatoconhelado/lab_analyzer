@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-from PyQt5.QtWidgets import (QMenu, QSplitter, QTreeView, QTreeWidget, QWidget, QVBoxLayout, QTabWidget, 
+from PyQt5.QtWidgets import (QAction, QMenu, QSplitter, QTreeView, QTreeWidget, QWidget, QVBoxLayout, QTabWidget, 
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView)
 from PyQt5.QtCore import Qt, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QColor, QStandardItemModel, QStandardItem
@@ -109,6 +109,15 @@ class WorkbenchExplorer(QTreeView):
         
         self.expandAll() # Keep folders open by default
 
+        self.create_menu_actions()
+
+    def create_menu_actions(self):
+        self.context_menu = QMenu(self)
+        self.add_dataset_action = QAction("➕ Create Trace from Dataset", self)
+        self.add_to_plot_action = QAction("➕ Add to Active Plot", self)
+        self.create_plot_action = QAction("📈 Create New Plot", self)
+        self.export_action = QAction("💾 Export to HDF5", self)
+
     def set_registry(self, registry):
         self.registry_ref = registry
         self.registry_ref.registry_changed.connect(
@@ -120,7 +129,8 @@ class WorkbenchExplorer(QTreeView):
         index = self.indexAt(position)
         if not index.isValid():
             return
-
+        index = index.siblingAtColumn(0)
+        self.context_menu.clear() 
         selection_model = self.selectionModel()
         selected_indexes = selection_model.selectedRows()
         
@@ -131,28 +141,28 @@ class WorkbenchExplorer(QTreeView):
             if tid:
                 trace_ids.append(tid)
 
-        menu = QMenu(self)
         item_type = index.data(Qt.ItemDataRole.UserRole + 1)
         print(item_type)
         if item_type == TYPE_TRACE:
-            self._create_trace_menu(menu, position, trace_ids)
+            self._create_trace_menu()
         elif item_type == TYPE_DATASET:
-            self._create_dataset_menu(menu, position, trace_ids)
+            self._create_dataset_menu()
         
+        self.context_menu.exec_(self.mapToGlobal(position))
 
-        menu.exec_(self.mapToGlobal(position))
+    def _create_dataset_menu(self):
 
-
-    def _create_dataset_menu(self, menu, position, trace_ids):
-        export_action = menu.addAction("💾 Export to HDF5")
+        self.context_menu.addAction(self.add_dataset_action)
+        self.context_menu.addAction(self.add_to_plot_action)
+        self.context_menu.addSeparator()
+        self.context_menu.addAction(self.export_action)
         
+    def _create_trace_menu(self):
 
-    def _create_trace_menu(self, menu, position, trace_ids):
-
-        plot_action = menu.addAction("📈 Create New Plot")
-        add_action = menu.addAction("➕ Add to Active Plot")
-        menu.addSeparator()
-        export_action = menu.addAction("💾 Export to HDF5")
+        self.context_menu.addAction(self.create_plot_action)
+        self.context_menu.addAction(self.add_to_plot_action)
+        self.context_menu.addSeparator()
+        self.context_menu.addAction(self.export_action)
 
 
     def add_item(self, item: WorkbenchAsset):
