@@ -1,0 +1,82 @@
+2026-04-24 10:04:03,781 - DEBUG - PyQt5.uic.uiparser - uiname is plot_window
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.uiparser - toplevel widget is PlotWidget
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.properties - setting property windowTitle
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.uiparser - push PlotWidget plot_window
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.uiparser - push QWidget plot_widget
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.properties - setting property pyuicMargins
+2026-04-24 10:04:03,782 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout verticalLayout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout mpl_plot_layout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout mpl_plot_layout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout residuals_layout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout residuals_layout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout verticalLayout
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - pop widget QWidget plot_widget
+2026-04-24 10:04:03,783 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x1275eaa80>
+2026-04-24 10:04:03,799 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:04:03,799 - DEBUG - PyQt5.uic.uiparser - push QMenuBar plot_menubar
+2026-04-24 10:04:03,799 - DEBUG - PyQt5.uic.uiparser - pop widget QMenuBar plot_menubar
+2026-04-24 10:04:03,799 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x1275eaa80>
+2026-04-24 10:04:03,800 - DEBUG - PyQt5.uic.uiparser - push QStatusBar plot_statusbat
+2026-04-24 10:04:03,800 - DEBUG - PyQt5.uic.uiparser - pop widget QStatusBar plot_statusbat
+2026-04-24 10:04:03,800 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x1275eaa80>
+2026-04-24 10:04:03,800 - DEBUG - PyQt5.uic.uiparser - pop widget PlotWidget plot_window
+2026-04-24 10:04:03,800 - DEBUG - PyQt5.uic.uiparser - new topwidget None
+2026-04-24 10:12:29,182 - INFO - root - ========================================
+2026-04-24 10:12:29,183 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:12:29,183 - INFO - root - User: root
+2026-04-24 10:12:29,183 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:12:29,183 - INFO - root - ========================================
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.uiparser - uiname is plot_window
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.uiparser - toplevel widget is PlotWidget
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.properties - setting property windowTitle
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.uiparser - push PlotWidget plot_window
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.uiparser - push QWidget plot_widget
+2026-04-24 10:12:29,184 - DEBUG - PyQt5.uic.properties - setting property pyuicMargins
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout verticalLayout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout mpl_plot_layout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout mpl_plot_layout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - push QVBoxLayout residuals_layout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout residuals_layout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - pop layout QVBoxLayout verticalLayout
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - pop widget QWidget plot_widget
+2026-04-24 10:12:29,185 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x127e32a80>
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.uiparser - push QMenuBar plot_menubar
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.uiparser - pop widget QMenuBar plot_menubar
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x127e32a80>
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.uiparser - push QStatusBar plot_statusbat
+2026-04-24 10:12:29,198 - DEBUG - PyQt5.uic.uiparser - pop widget QStatusBar plot_statusbat
+2026-04-24 10:12:29,199 - DEBUG - PyQt5.uic.uiparser - new topwidget <src.gui.plotting.plot_widget.PlotWidget object at 0x127e32a80>
+2026-04-24 10:12:29,199 - DEBUG - PyQt5.uic.uiparser - pop widget PlotWidget plot_window
+2026-04-24 10:12:29,199 - DEBUG - PyQt5.uic.uiparser - new topwidget None
+2026-04-24 10:14:35,545 - INFO - root - ========================================
+2026-04-24 10:14:35,545 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:14:35,545 - INFO - root - User: root
+2026-04-24 10:14:35,545 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:14:35,545 - INFO - root - ========================================
+2026-04-24 10:14:35,546 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:14:35,547 - DEBUG - PyQt5.uic.properties - setting property windowTitle
+2026-04-24 10:14:35,547 - DEBUG - PyQt5.uic.properties - setting property pyuicMargins
+2026-04-24 10:14:35,561 - DEBUG - PyQt5.uic.properties - setting property geometry
+2026-04-24 10:19:04,358 - INFO - root - ========================================
+2026-04-24 10:19:04,358 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:19:04,358 - INFO - root - User: root
+2026-04-24 10:19:04,358 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:19:04,358 - INFO - root - ========================================
+2026-04-24 10:19:36,722 - INFO - root - ========================================
+2026-04-24 10:19:36,722 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:19:36,722 - INFO - root - User: root
+2026-04-24 10:19:36,723 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:19:36,723 - INFO - root - ========================================
+2026-04-24 10:22:01,721 - INFO - root - ========================================
+2026-04-24 10:22:01,722 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:22:01,722 - INFO - root - User: root
+2026-04-24 10:22:01,722 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:22:01,722 - INFO - root - ========================================
+2026-04-24 10:28:57,537 - INFO - root - ========================================
+2026-04-24 10:28:57,537 - INFO - root - Q-DART SESSION STARTED
+2026-04-24 10:28:57,537 - INFO - root - User: root
+2026-04-24 10:28:57,537 - INFO - root - Python: 3.12.6 (main, Apr 23 2026, 11:56:59) [Clang 17.0.0 (clang-1700.6.4.2)]
+2026-04-24 10:28:57,537 - INFO - root - ========================================

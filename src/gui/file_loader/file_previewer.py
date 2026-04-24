@@ -5,15 +5,17 @@ from PyQt5.QtWidgets import QAbstractButton, QWidget, QButtonGroup, QFileDialog,
 from PyQt5.QtCore import QRectF, Qt, QPoint
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 import pyqtgraph as pg
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from src.core.structures import InspectInfo, Dataset
+from resources.ui.ui_file_preview import Ui_Form
 
 
-class FilePreviewer(QWidget):
+class FilePreviewer(QWidget, Ui_Form):
 
     request_preview_sig = Signal(str)
     request_inspect_info_sig = Signal(str)
@@ -23,9 +25,7 @@ class FilePreviewer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        loadUi(
-            os.path.join('resources', 'ui', 'file_preview.ui'), self
-        )
+        self.setupUi(self)
         self._setup_preview_toggle()
         self._setup_plots()
 
@@ -35,6 +35,7 @@ class FilePreviewer(QWidget):
         the data preview and inspection views, and applies custom styling.
         """
 
+        logger.debug("Setting up preview toggle buttons and styles.")
         self.toggleGroup = QButtonGroup(self)
         self.toggleGroup.addButton(self.display_button, 0) # ID 0
         self.toggleGroup.addButton(self.inspect_button, 1) # ID 1
@@ -54,6 +55,7 @@ class FilePreviewer(QWidget):
         along with a colorbar for the image plot.
         """
 
+        logger.debug("Initializing preview plots for 1D and 2D data.")
         self.preview_dataline = self.data_preview_plot.plot([], pen="yellow")
 
         rect = QRectF(0, 0, 1, 1)

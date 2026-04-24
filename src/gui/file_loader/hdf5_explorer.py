@@ -8,14 +8,17 @@ from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.uic import loadUi
 import pyqtgraph as pg
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 from src.core.structures import InspectInfo, Dataset
 from src.gui.file_loader.file_previewer import FilePreviewer
+from resources.ui.ui_hdf5_explorer import Ui_HDF5ExplorerDock
 
 
 
-class HDF5ExplorerDock(QDockWidget):
+class HDF5ExplorerDock(QDockWidget, Ui_HDF5ExplorerDock):
     """
     A dockable widget for exploring HDF5 files, with a preview
     panel that can toggle between a data preview and an inspection view.
@@ -62,9 +65,7 @@ class HDF5ExplorerDock(QDockWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(
-            os.path.join('resources', 'ui', 'hdf5_explorer.ui'), self
-        )
+        self.setupUi(self)
         self._setup_previewer()
 
         self.current_file = None
@@ -214,6 +215,7 @@ class HDF5ExplorerDock(QDockWidget):
         dialog, in which case it simply returns without emitting any signal.
         """
 
+        logger.debug("Opening file dialog to select HDF5 file.")
         dialog = QFileDialog(self)
         directory = os.path.expanduser("~")
         for path in self.possible_data_paths:
@@ -232,6 +234,7 @@ class HDF5ExplorerDock(QDockWidget):
         filepath = os.path.abspath(file_path)
         if filepath != "":
             self.import_hdf5_sig.emit(filepath)
+        logger.debug(f"Selected HDF5 file: {filepath}")
 
     @Slot(dict)
     def update_imported_data_tree(self, structure: dict):
@@ -307,7 +310,15 @@ class HDF5ExplorerDock(QDockWidget):
             # Store the full HDF5 path (e.g., '/Data/Pulsed/Exp_001')
             # This is vital for the Dataclass request later
             current_path = f"{parent_item.data(0, Qt.ItemDataRole.UserRole)['path']}/{name}".replace("//", "/")
-            item.setData(0, Qt.ItemDataRole.UserRole, {"path": current_path, "kind": info["type"], "shape": info.get("shape", False)})
+            item.setData(
+                0, 
+                Qt.ItemDataRole.UserRole,
+                {
+                    "path": current_path,
+                    "kind": info["type"],
+                    "shape": info.get("shape", False)
+                }
+            )
             
             # If it's a group, recurse to add its children
             if info["type"] == "Group":

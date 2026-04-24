@@ -57,6 +57,10 @@ class LogModel(QAbstractTableModel):
                 return QBrush(QColor("#ff5555")) # Red
             if log['level'] == "WARNING":
                 return QBrush(QColor("#ffb86c")) # Orange
+            if log['level'] == "CRITICAL":
+                return QBrush(QColor("#ff4444")) # Dark Red
+            if log['level'] == "DEBUG":
+                return QBrush(QColor("#6272a4")) # Purple
         
         return None
 
@@ -71,3 +75,36 @@ class LogModel(QAbstractTableModel):
         self._logs.append(log_entry)
         self.endInsertRows()
         #self.layoutChanged.emit()
+
+
+class IgnoreModuleFilter(logging.Filter):
+
+
+    def __init__(self, modules_to_ignore=None):
+        super().__init__()
+        # Use a set for O(1) lookup performance
+        self.ignored_set = set(modules_to_ignore) if modules_to_ignore else set()
+
+    def filter(self, record):
+        # We check if the record's name starts with ANY of our ignored strings
+        # This catches sub-modules (e.g., 'gui.previewer.canvas')
+        return not any(record.name.startswith(m) for m in self.ignored_set)
+
+    def add_module(self, name):
+        self.ignored_set.add(name)
+
+    def remove_module(self, name):
+        self.ignored_set.discard(name)
+
+
+class LevelFilter(logging.Filter):
+
+
+    def __init__(self):
+        super().__init__()
+        # By default, we might want to show everything
+        self.enabled_levels = {"INFO", "WARNING", "ERROR", "CRITICAL", "DEBUG"}
+
+    def filter(self, record):
+        # Only allow the log through if its level name is in our whitelist
+        return record.levelname in self.enabled_levels

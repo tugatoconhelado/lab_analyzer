@@ -2,11 +2,12 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 
 import numpy as np
 import sys
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -20,10 +21,13 @@ from src.gui.fitting.fit_dock import FitDock
 from src.gui.console.workspace import WorkspaceWidget
 from src.gui.file_loader.hdf5_explorer import HDF5ExplorerDock
 from src.gui.log_registry.log_registry import LogRegistryDock
+from src.gui.log_registry.log_handler import (QtLogHandler, 
+    IgnoreModuleFilter, LevelFilter)
+from resources.ui.ui_analyzer import Ui_MainWindow
 
 
 
-class AnalyzerMainWindow(QMainWindow):
+class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
     """
     Main Window of the Analyzer software
     """
@@ -31,9 +35,7 @@ class AnalyzerMainWindow(QMainWindow):
     def __init__(self, bridge: AnalyzerBridge, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        loadUi(
-            os.path.join('resources', 'ui', 'analyzer.ui'), self
-        )
+        self.setupUi(self)
 
         self._bridge = bridge
         self.plot_counter = 0
@@ -42,7 +44,6 @@ class AnalyzerMainWindow(QMainWindow):
         self.preview_index = 2
         self.axis_options_path = {}
 
-        self._setup_console()
         self._setup_hdf5_explorer()
         self._setup_file_explorer()
         self._setup_fit_dock()
@@ -51,6 +52,8 @@ class AnalyzerMainWindow(QMainWindow):
         self.create_new_plot("Initial Plot")
 
     def connect_to_bridge(self):
+
+        self._setup_console()
 
         self.hdf5_explorer.connect_to_bridge(self._bridge)        
         self._bridge.data_sig.connect(
@@ -71,8 +74,47 @@ class AnalyzerMainWindow(QMainWindow):
         self.file_explorer.connect_to_bridge(self._bridge)
 
     def _setup_log_registry(self):
-        self.log_registry = LogRegistryDock(parent=self)
+        self.level_filter = LevelFilter()
+        self.log_registry = LogRegistryDock(parent=self, level_filter=self.level_filter)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.log_registry)
+        self.setup_logging()
+
+    def setup_logging(self):
+
+        logger = logging.getLogger()
+        logger.setLevel(logging.DEBUG)
+        module_filter = IgnoreModuleFilter()
+        module_filter.add_module("PyQt5.uic.uiparser")  
+        module_filter.add_module("PyQt5.uic.properties")
+        module_filter.add_module("matplotlib.font_manager")
+
+        self.gui_handler = QtLogHandler()
+        self.gui_handler.setLevel(logging.DEBUG)
+        self.gui_handler.addFilter(module_filter)
+        self.gui_handler.addFilter(self.level_filter)
+        self.log_registry.connect_handler(self.gui_handler)
+        logger.addHandler(self.gui_handler)
+
+        file_handler = RotatingFileHandler(
+            "qdart_session.log", 
+            maxBytes=10_000_000, 
+            backupCount=5
+        )
+        file_handler.setFormatter(
+            logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
+            )
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.addFilter(module_filter)
+        logger.addHandler(file_handler)
+
+        logger.info("="*40)
+        logger.info("Q-DART SESSION STARTED")
+        logger.info(f"User: {os.getlogin()}")
+        logger.info(f"Python: {sys.version}")
+        logger.info("="*40)
+
 
     def _setup_console(self):
         """"
