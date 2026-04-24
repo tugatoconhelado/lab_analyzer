@@ -12,6 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 class FileExplorerDock(QDockWidget):
 
+    import_hdf5_sig = Signal(str)
 
     def __init__(self, title, root_path=None, parent=None):
         super().__init__(title, parent)
@@ -39,10 +40,12 @@ class FileExplorerDock(QDockWidget):
         self.tree.setSortingEnabled(True)
         self.tree.sortByColumn(0, Qt.SortOrder.AscendingOrder)
         
-
         # 5. Connect Signals
         self.search_bar.textChanged.connect(self.update_filter)
         self.tree.doubleClicked.connect(self.on_file_double_clicked)
+
+    def connect_to_bridge(self, bridge):
+        self.import_hdf5_sig.connect(bridge.import_hdf5_data)
 
     def update_filter(self, text):
         """
@@ -62,7 +65,7 @@ class FileExplorerDock(QDockWidget):
         if os.path.isfile(file_path):
             print(f"Loading experiment data from: {file_path}")
             # Here you would call your Hub's load_data function
-            # self.parent().load_hdf5_to_workspace(file_path)
+            self.import_hdf5_sig.emit(file_path)
 
 
 if __name__ == "__main__":

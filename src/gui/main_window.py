@@ -68,6 +68,8 @@ class AnalyzerMainWindow(QMainWindow):
             self.plot_fit_residuals
         )
 
+        self.file_explorer.connect_to_bridge(self._bridge)
+
     def _setup_log_registry(self):
         self.log_registry = LogRegistryDock(parent=self)
         self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.log_registry)

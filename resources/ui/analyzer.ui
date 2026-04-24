@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Lab Analyzer</string>
+   <string>Q-DART | Quantum Data Analysis &amp; Regression Toolkit</string>
   </property>
   <property name="documentMode">
    <bool>false</bool>
