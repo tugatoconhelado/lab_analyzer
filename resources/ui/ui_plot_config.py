@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_plot_control(object):
     def setupUi(self, plot_control):
         plot_control.setObjectName("plot_control")
-        plot_control.resize(474, 541)
+        plot_control.resize(474, 671)
         self.verticalLayout = QtWidgets.QVBoxLayout(plot_control)
         self.verticalLayout.setContentsMargins(10, 10, -1, 0)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -352,11 +352,30 @@ class Ui_plot_control(object):
         self.verticalLayout_3.setStretch(0, 4)
         self.verticalLayout_3.setStretch(1, 1)
         self.plot_control_tabw.addTab(self.plot_conf_widget, "")
+        self.data_conf_widget = QtWidgets.QWidget()
+        self.data_conf_widget.setObjectName("data_conf_widget")
+        self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.data_conf_widget)
+        self.verticalLayout_5.setObjectName("verticalLayout_5")
+        self.listWidget = QtWidgets.QListWidget(self.data_conf_widget)
+        self.listWidget.setObjectName("listWidget")
+        self.verticalLayout_5.addWidget(self.listWidget)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout_2.addItem(spacerItem)
+        self.pushButton_2 = QtWidgets.QPushButton(self.data_conf_widget)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.horizontalLayout_2.addWidget(self.pushButton_2)
+        self.pushButton_3 = QtWidgets.QPushButton(self.data_conf_widget)
+        self.pushButton_3.setObjectName("pushButton_3")
+        self.horizontalLayout_2.addWidget(self.pushButton_3)
+        self.verticalLayout_5.addLayout(self.horizontalLayout_2)
+        self.plot_control_tabw.addTab(self.data_conf_widget, "")
         self.verticalLayout.addWidget(self.plot_control_tabw)
         self.verticalLayout.setStretch(0, 1)
 
         self.retranslateUi(plot_control)
-        self.plot_control_tabw.setCurrentIndex(0)
+        self.plot_control_tabw.setCurrentIndex(2)
         QtCore.QMetaObject.connectSlotsByName(plot_control)
 
     def retranslateUi(self, plot_control):
@@ -400,4 +419,7 @@ class Ui_plot_control(object):
         self.label_15.setText(_translate("plot_control", "Scale"))
         self.label_19.setText(_translate("plot_control", "Max"))
         self.plot_control_tabw.setTabText(self.plot_control_tabw.indexOf(self.plot_conf_widget), _translate("plot_control", "Plot"))
+        self.pushButton_2.setText(_translate("plot_control", "Add"))
+        self.pushButton_3.setText(_translate("plot_control", "Remove"))
+        self.plot_control_tabw.setTabText(self.plot_control_tabw.indexOf(self.data_conf_widget), _translate("plot_control", "Data"))
 import analyzer_rc

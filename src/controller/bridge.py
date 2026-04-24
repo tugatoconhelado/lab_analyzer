@@ -9,6 +9,7 @@ from src.core.engine import AnalysisEngine
 from src.core.engine import InspectInfo, Dataset
 from src.core.workbench import WorkbenchRegistry
 from qtconsole.inprocess import QtInProcessKernelManager
+from src.controller.plot_manager import PlotManager
 
 
 class AnalyzerBridge(QObject):
@@ -26,9 +27,10 @@ class AnalyzerBridge(QObject):
     refresh_registry_sig = Signal(dict)
 
 
-    def __init__(self):
+    def __init__(self, ui=None):
         super().__init__()
 
+        self.ui = ui
         self.kernel_manager = QtInProcessKernelManager()
         self.kernel_manager.start_kernel()
         self.kernel_client = self.kernel_manager.client()
@@ -36,6 +38,8 @@ class AnalyzerBridge(QObject):
 
         self.registry = WorkbenchRegistry(self.kernel_manager.kernel.shell)
         self.engine = AnalysisEngine(plugin_path=r"models", registry=self.registry)
+        self.plot_manager = PlotManager(self.registry)
+        self.ui.connect_to_bridge(self) # type: ignore
 
     def get_kernel_client(self):
         return self.kernel_client

@@ -10,16 +10,19 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 from src.core.structures import InspectInfo, Dataset, LineConfig
+from src.core.plot_object import PlotObject
 from src.gui.plotting.mpl_canvas import MplCanvas
 from resources.ui.ui_plot_widget import Ui_plot_window
 
-class PlotWidget(QMainWindow, Ui_plot_window):
+class PlotWindow(QMainWindow, Ui_plot_window):
 
     
-    def __init__(self, parent=None, plot_id="Data Plot 0"):
+    def __init__(self, parent=None, plot_obj: PlotObject | None = None, plot_id="plot_00", plot_name="Plot"):
         super().__init__(parent)
         self.setupUi(self)
         self.plot_id = plot_id
+        self.plot_name = plot_name
+        self.plot_obj = plot_obj or PlotObject(plot_id=plot_id, registry=None)
 
         self.plot_canvas = MplCanvas(self)
         self.toolbar = NavigationToolbar2QT(self.plot_canvas, self)
@@ -29,11 +32,16 @@ class PlotWidget(QMainWindow, Ui_plot_window):
 
         self.line_configs = {}  # Store LineConfig objects by line name
 
+        self.setWindowTitle(f"Q-DART Plot - {self.plot_name}")
+
+    def refresh(self):
+        self.plot_canvas.update_from_object(self.plot_obj)
+
 
 
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    widget = PlotWidget(plot_id="My Plot")
+    widget = PlotWindow(plot_name="My Plot")
     widget.show()
     sys.exit(app.exec())

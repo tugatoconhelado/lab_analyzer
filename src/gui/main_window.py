@@ -12,9 +12,9 @@ from logging.handlers import RotatingFileHandler
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from src.core.structures import Dataset, LineConfig
-from src.gui.bridge import AnalyzerBridge
+from src.controller.bridge import AnalyzerBridge
 from src.gui.plotting.plot_config import PlotControlDock
-from src.gui.plotting.plot_widget import PlotWidget
+from src.gui.plotting.plot_widget import PlotWindow
 from src.core.style_generator import LineType
 from src.gui.file_explorer import FileExplorerDock
 from src.gui.fitting.fit_dock import FitDock
@@ -32,12 +32,11 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
     Main Window of the Analyzer software
     """
 
-    def __init__(self, bridge: AnalyzerBridge, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.setupUi(self)
 
-        self._bridge = bridge
         self.plot_counter = 0
         self._open_plots = {}
 
@@ -49,29 +48,28 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
         self._setup_fit_dock()
         self._setup_plot_config()
         self._setup_log_registry()
-        self.create_new_plot("Initial Plot")
 
-    def connect_to_bridge(self):
+    def connect_to_bridge(self, bridge: AnalyzerBridge):
 
-        self._setup_console()
+        self._setup_console(bridge)
 
-        self.hdf5_explorer.connect_to_bridge(self._bridge)        
-        self._bridge.data_sig.connect(
+        self.hdf5_explorer.connect_to_bridge(bridge)        
+        bridge.data_sig.connect(
             self.plot_data
         )
         
-        self.workspace.connect_to_bridge(self._bridge)
+        self.workspace.connect_to_bridge(bridge)
         self.workspace.console.push_to_console({'hub': self.workspace})  # Expose the workspace to the console as 'hub'
 
-        self.fit_dock.connect_to_bridge(self._bridge)
-        self._bridge.fit_data_sig.connect(
+        self.fit_dock.connect_to_bridge(bridge)
+        bridge.fit_data_sig.connect(
             self.plot_fit_data
         )
-        self._bridge.residuals_sig.connect(
+        bridge.residuals_sig.connect(
             self.plot_fit_residuals
         )
 
-        self.file_explorer.connect_to_bridge(self._bridge)
+        self.file_explorer.connect_to_bridge(bridge)
 
     def _setup_log_registry(self):
         self.level_filter = LevelFilter()
@@ -115,15 +113,14 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
         logger.info(f"Python: {sys.version}")
         logger.info("="*40)
 
-
-    def _setup_console(self):
+    def _setup_console(self, bridge: AnalyzerBridge):
         """"
         Sets up the Jupyter console and variable explorer,
         and connects them to an in-process kernel.
         """
 
-        kernel_manager = self._bridge.get_kernel_manager()
-        kernel_client = self._bridge.get_kernel_client()
+        kernel_manager = bridge.get_kernel_manager()
+        kernel_client = bridge.get_kernel_client()
         self.workspace = WorkspaceWidget(self, kernel_manager, kernel_client)
         self.setCentralWidget(self.workspace)
 
@@ -150,15 +147,6 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.config_widget)
         self.config_widget.line_config_changed.connect(self.update_plot_config)
         self.tabifyDockWidget(self.fit_dock, self.config_widget)
-
-    def create_new_plot(self, title="New Plot"):
-
-        self.plot_counter += 1
-        plot = PlotWidget(plot_id=f"Data Plot {self.plot_counter}", parent=self)
-        self._open_plots[plot.plot_id] = plot
-        plot.setWindowTitle(title)
-        plot.show()
-        plot.raise_()
 
     @Slot(str, LineConfig)
     def update_plot_config(self, line: str, config: LineConfig):
@@ -192,7 +180,7 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
 if __name__ == "__main__":
     import sys
     from PyQt5.QtWidgets import QApplication
-    from src.gui.bridge import AnalyzerBridge
+    from controller.bridge import AnalyzerBridge
 
     app = QApplication(sys.argv)
     

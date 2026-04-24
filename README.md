@@ -17,4 +17,4 @@ Aims to be a suite to analyze data from quantum optics experiments.
     - Plot Trace (in)
     - Plot Fit (in)
 - FitResult data saving
-- Finish and clean logging implementation
+- Finish and clean logging implementation ✅

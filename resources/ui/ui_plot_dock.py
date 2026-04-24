@@ -95,9 +95,6 @@ class Ui_plot_dock(object):
         self.pushButton = QtWidgets.QPushButton(self.line_groupbox)
         self.pushButton.setMaximumSize(QtCore.QSize(50, 16777215))
         self.pushButton.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(":/icons/icons/color_wheel.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.pushButton.setIcon(icon)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout.addWidget(self.pushButton)
         self.gridLayout.addLayout(self.horizontalLayout, 2, 1, 1, 1)
@@ -159,7 +156,6 @@ class Ui_plot_dock(object):
         self.pick_color_button = QtWidgets.QPushButton(self.marker_groupbox)
         self.pick_color_button.setMaximumSize(QtCore.QSize(50, 16777215))
         self.pick_color_button.setText("")
-        self.pick_color_button.setIcon(icon)
         self.pick_color_button.setObjectName("pick_color_button")
         self.marker_color_layout.addWidget(self.pick_color_button)
         self.gridLayout_2.addLayout(self.marker_color_layout, 2, 1, 1, 1)
@@ -401,4 +397,3 @@ class Ui_plot_dock(object):
         self.label_15.setText(_translate("plot_dock", "Scale"))
         self.label_19.setText(_translate("plot_dock", "Max"))
         self.plot_control_tabw.setTabText(self.plot_control_tabw.indexOf(self.plot_conf_widget), _translate("plot_dock", "Plot"))
-import analyzer_rc

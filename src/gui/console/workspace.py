@@ -3,7 +3,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
-from PyQt5.QtWidgets import (QSplitter, QTreeView, QTreeWidget, QWidget, QVBoxLayout, QTabWidget, 
+from PyQt5.QtWidgets import (QMenu, QSplitter, QTreeView, QTreeWidget, QWidget, QVBoxLayout, QTabWidget, 
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView)
 from PyQt5.QtCore import Qt, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QColor, QStandardItemModel, QStandardItem
@@ -12,6 +12,7 @@ from src.gui.console.console import ConsoleWidget
 from src.gui.console.editor import EditorWidget
 from src.gui.console.variable_explorer import VariableExplorer
 from src.core.structures import WorkbenchAsset
+from src.core.constants import TYPE_DATASET, TYPE_FIT, TYPE_PLOT, TYPE_TRACE
 
 
 class WorkspaceWidget(QWidget):
@@ -102,7 +103,10 @@ class WorkbenchExplorer(QTreeView):
         for node in self.root_nodes.values():
             node.setEditable(False)
             self._model.appendRow(node)
-            
+
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+        
         self.expandAll() # Keep folders open by default
 
     def set_registry(self, registry):
@@ -110,6 +114,46 @@ class WorkbenchExplorer(QTreeView):
         self.registry_ref.registry_changed.connect(
             self.refresh
         )
+
+    def show_context_menu(self, position):
+
+        index = self.indexAt(position)
+        if not index.isValid():
+            return
+
+        selection_model = self.selectionModel()
+        selected_indexes = selection_model.selectedRows()
+        
+        trace_ids = []
+        for idx in selected_indexes:
+            # Access the data stored in the model at that index
+            tid = idx.data(Qt.UserRole)
+            if tid:
+                trace_ids.append(tid)
+
+        menu = QMenu(self)
+        item_type = index.data(Qt.ItemDataRole.UserRole + 1)
+        print(item_type)
+        if item_type == TYPE_TRACE:
+            self._create_trace_menu(menu, position, trace_ids)
+        elif item_type == TYPE_DATASET:
+            self._create_dataset_menu(menu, position, trace_ids)
+        
+
+        menu.exec_(self.mapToGlobal(position))
+
+
+    def _create_dataset_menu(self, menu, position, trace_ids):
+        export_action = menu.addAction("💾 Export to HDF5")
+        
+
+    def _create_trace_menu(self, menu, position, trace_ids):
+
+        plot_action = menu.addAction("📈 Create New Plot")
+        add_action = menu.addAction("➕ Add to Active Plot")
+        menu.addSeparator()
+        export_action = menu.addAction("💾 Export to HDF5")
+
 
     def add_item(self, item: WorkbenchAsset):
 
@@ -123,12 +167,15 @@ class WorkbenchExplorer(QTreeView):
             category = "Fits"
         elif "plot" in kind.lower():
             category = "Plots"
-
         if kind == "FitResult":
             self.add_fit_to_tree(content)
             return
         elif kind == "Trace":
             self.add_trace_to_tree(content)
+            return
+        elif "dataset" in kind.lower():
+            category = "Datasets"
+            self.add_dataset_to_tree(content)
             return
             
         # Create the row items
@@ -184,11 +231,28 @@ class WorkbenchExplorer(QTreeView):
         for name, obj in registry_data.items():
             self.add_item(obj)
 
+    def add_dataset_to_tree(self, dataset_obj):
+
+        dataset_node = QStandardItem(f"📊 {dataset_obj.name}")
+        dataset_node.setForeground(QColor("green"))
+        dataset_node.setData(dataset_obj, Qt.ItemDataRole.UserRole) # Store the Dataset object
+        dataset_node.setData(TYPE_DATASET, Qt.ItemDataRole.UserRole + 1)
+
+        kind = type(dataset_obj).__name__
+        shape = str(getattr(dataset_obj, 'shape', 'N/A'))
+
+        type_item = QStandardItem(kind)
+        shape_item = QStandardItem(shape)
+
+        row = [dataset_node, type_item, shape_item]
+        self.root_nodes["Datasets"].appendRow(row)
+
     def add_trace_to_tree(self, trace_obj):
 
         trace_node = QStandardItem(f"🔗 Trace: {trace_obj.name}")
         trace_node.setForeground(QColor("blue"))
         trace_node.setData(trace_obj, Qt.ItemDataRole.UserRole) # Store the Trace object
+        trace_node.setData(TYPE_TRACE, Qt.ItemDataRole.UserRole + 1)
         
         x_row = self._construct_item_row(trace_obj.x_ds, name=f"🔗 X-Axis: {trace_obj.x_ds.name}")
         y_row = self._construct_item_row(trace_obj.y_ds, name=f"🔗 Y-Axis: {trace_obj.y_ds.name}")
@@ -198,14 +262,14 @@ class WorkbenchExplorer(QTreeView):
 
         self.root_nodes["Traces"].appendRow(trace_node)
 
-
     def add_fit_to_tree(self, fit_obj):
         """Adds a FitResult as a expandable branch in the tree."""
         # 1. Create the Main Fit Row
         fit_node = QStandardItem(f"📉 Fit: {fit_obj.name}")
         fit_node.setForeground(QColor("red"))
         fit_node.setData(fit_obj, Qt.ItemDataRole.UserRole) # Store the FitResult object
-        
+        fit_node.setData(TYPE_FIT, Qt.ItemDataRole.UserRole + 1)
+
         # We display the name of the source, but the icon/text shows it's a link
         trace_name = f"🔗 Trace: {fit_obj.trace.name}"
         curve_name = f"📈 {fit_obj.curve.name}"
@@ -251,6 +315,7 @@ class WorkbenchExplorer(QTreeView):
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     from qtconsole.inprocess import QtInProcessKernelManager
+    from src.core.structures import Dataset, Trace
     import numpy as np
 
     app = QApplication(sys.argv)
@@ -259,9 +324,17 @@ if __name__ == "__main__":
     kernel_client = kernel_manager.client()
     kernel_client.start_channels()
     widget = WorkspaceWidget(None, kernel_manager, kernel_client)
+    x_ds_test1 = Dataset(name="X Data", data=np.random.random(100))
+    y_ds_test1 = Dataset(name="Y Data", data=np.random.random(100))
+    trace_test1 = WorkbenchAsset(
+        name="Test Trace",
+        content=Trace(name="Test Trace", x_ds=x_ds_test1, y_ds=y_ds_test1),
+        asset_type="Trace"
+    )
+    widget.workbench.add_item(trace_test1)
     widget.workbench.add_item(WorkbenchAsset(
         name="Test item",
-        content=np.array([1, 2, 3]),
+        content=Dataset(name="Test Dataset", data=np.array([1, 2, 3])),
         asset_type="Dataset"
     ))
     widget.workbench.add_item(WorkbenchAsset(
@@ -271,7 +344,7 @@ if __name__ == "__main__":
     ))
     widget.workbench.add_item(WorkbenchAsset(
         name="Var3",
-        content=np.array([4, 5, 6]),
+        content=Dataset(name="Var3 Dataset", data=np.array([4, 5, 6])),
         asset_type="Dataset"
     ))
     # widget.workbench.remove_item(WorkbenchAsset(

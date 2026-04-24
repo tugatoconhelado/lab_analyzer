@@ -2,12 +2,14 @@ from PyQt5.QtWidgets import QWidget
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import numpy as np
 
 import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 
 from src.core.structures import LineConfig, AxesConfig
+from src.core.plot_object import PlotObject
 
 
 class MplCanvas(FigureCanvasQTAgg):
@@ -18,12 +20,26 @@ class MplCanvas(FigureCanvasQTAgg):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         self._lines = {}
+        self._axes = {'ax_00': self.axes}
         self._fit_line_counter = 0
         self._data_line_counter = 0
         
         # Initialize the canvas
         super().__init__(self.fig)
         self.setParent(parent)
+
+    def update_from_object(self, obj: PlotObject):
+        """Updates the plot based on the provided PlotObject."""
+        self.clear_plot()
+        for trace_id in obj.trace_ids:
+            trace = obj.registry.get(trace_id)
+            line_cfg = obj.trace_configs.get(trace_id, LineConfig())
+            if trace and line_cfg:
+                x_data, y_data = trace.data
+                self.add_data_line(x_data, y_data, line_id=trace_id)
+                self.apply_line_config(trace_id, line_cfg)
+
+        self.apply_axes_config(obj.plot_id, obj.axes_config)
 
     def clear_plot(self):
         """Clears the current plot and resets line tracking."""
@@ -33,20 +49,18 @@ class MplCanvas(FigureCanvasQTAgg):
         self._data_line_counter = 0
         self.draw()
 
-    def add_data_line(self, x_data, y_data):
-        """Standard method to refresh the plot with new Dataset."""
-        line = self.axes.plot(x_data.data, y_data.data, 'o', color='blue', label="Data")[0]
-        self.axes.set_ylabel(f"{y_data.name}")
-        self.axes.set_xlabel(f"{x_data.name}")
-            
-        self.axes.set_title(f"Dataset: {y_data.path.split('/')[-1]}")
-        
+    def add_data_line(self, x_data: np.ndarray, y_data: np.ndarray, line_id: str = ""):
+        """
+        Standard method to refresh the plot with new Dataset.
+        """
+        line = self.axes.plot(x_data, y_data, 'o', color='blue', label="Data")[0]
         self.draw()
 
-        if "data" in self._lines:
-            line_id = f"data_{self._data_line_counter:02d}"
-        else:
-            line_id = "data"
+        if not line_id:
+            if "data" in self._lines:
+                line_id = f"data_{self._data_line_counter:02d}"
+            else:
+                line_id = "data"
         self._lines[line_id] = line
         self._data_line_counter += 1
 
@@ -80,25 +94,36 @@ class MplCanvas(FigureCanvasQTAgg):
 
         self.draw()
 
-    def apply_plot_config(self, plot_id: str, plot_config: AxesConfig):
+    def apply_axes_config(self, ax_id: str, plot_config: AxesConfig):
         """
         Applies general plot configurations (e.g., grid visibility).
         """
-        self.axes.set_title(plot_config.title)
-        self.axes.set_xlabel(plot_config.x_label)
-        self.axes.set_ylabel(plot_config.y_label)
+        ax = self._axes.get(ax_id, self.axes)
 
-        self.axes.legend(loc=plot_config.legend_loc) if plot_config.show_legend else self.axes.legend().set_visible(False)
-        self.axes.grid(plot_config.show_grid)
+        ax.set_title(plot_config.title)
+        ax.set_xlabel(plot_config.x_label)
+        ax.set_ylabel(plot_config.y_label)
 
-        self.axes.set_xscale(plot_config.x_scale)
-        self.axes.set_yscale(plot_config.y_scale)
+        if plot_config.show_legend:
+            ax.legend(loc=plot_config.legend_loc) 
+
+        else:
+            ax.legend().set_visible(False)
+        
+        ax.grid(plot_config.show_grid)
+
+        ax.set_xscale(plot_config.x_scale)
+        ax.set_yscale(plot_config.y_scale)
+
         if plot_config.x_limits:
-            self.axes.set_xlim(plot_config.x_limits)
+            ax.set_xlim(plot_config.x_limits)
+
         if plot_config.y_limits:
-            self.axes.set_ylim(plot_config.y_limits)
+            ax.set_ylim(plot_config.y_limits)
+
         if plot_config.tight_layout:
             self.fig.tight_layout()
+
         else:
             self.fig.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
         
