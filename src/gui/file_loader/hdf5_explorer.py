@@ -5,7 +5,6 @@ from PyQt5.QtWidgets import QAbstractButton, QDockWidget, QButtonGroup, QFileDia
 from PyQt5.QtCore import QRectF, Qt, QPoint
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 import pyqtgraph as pg
 import numpy as np
 import logging
@@ -191,7 +190,7 @@ class HDF5ExplorerDock(QDockWidget, Ui_HDF5ExplorerDock):
         """
 
         path = current.data(0, Qt.ItemDataRole.UserRole)["path"]
-        kind = current.data(0, Qt.ItemDataRole.UserRole)["kind"]
+        kind = current.data(0, Qt.ItemDataRole.UserRole).get("kind", "Unknown")
         shape = current.data(0, Qt.ItemDataRole.UserRole).get("shape", False)
         if not path:
             return
@@ -266,7 +265,7 @@ class HDF5ExplorerDock(QDockWidget, Ui_HDF5ExplorerDock):
         
         # We start from the root "/"
         root_item = QTreeWidgetItem(self.imported_data_tree, ["/", 'Group'])
-        root_item.setData(0, Qt.ItemDataRole.UserRole, {"path": "/", "type": "Group"})
+        root_item.setData(0, Qt.ItemDataRole.UserRole, {"path": "/", "kind": "Group"})
         
         self._add_tree_nodes(structure["/"].get("children", {}), root_item)
         self.imported_data_tree.expandAll()

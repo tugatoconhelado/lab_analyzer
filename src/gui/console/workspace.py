@@ -150,10 +150,10 @@ class WorkbenchExplorer(QTreeView):
         kind = getattr(item, 'asset_type', 'N/A')
         shape = getattr(item.content, 'shape', 'N/A')
 
-        for row in range(self.rowCount()):
-            name_cell = self.item(row, 0)
-            kind_cell = self.item(row, 1)
-            shape_cell = self.item(row, 2)
+        for row in range(self._model.rowCount()):
+            name_cell = self._model.item(row, 0)
+            kind_cell = self._model.item(row, 1)
+            shape_cell = self._model.item(row, 2)
 
             # Skip incomplete/empty rows safely
             if name_cell is None or kind_cell is None or shape_cell is None:
@@ -165,7 +165,7 @@ class WorkbenchExplorer(QTreeView):
             print(item_name, item_kind, item_shape)
             if item_name == name and item_kind == kind:
                 if item_shape == shape:
-                    self.removeRow(row)
+                    self._model.removeRow(row)
                     return row
 
     @Slot()

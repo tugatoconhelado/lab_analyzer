@@ -4,21 +4,18 @@ from PyQt5.QtWidgets import (QDockWidget, QTreeView, QVBoxLayout,
 from PyQt5.QtCore import Qt, QDir
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+from resources.ui.ui_files_dock import Ui_files_dockwidget
 
-
-class FileExplorerDock(QDockWidget):
+class FileExplorerDock(QDockWidget, Ui_files_dockwidget):
 
     import_hdf5_sig = Signal(str)
 
     def __init__(self, title, root_path=None, parent=None):
         super().__init__(title, parent)
-        loadUi(
-            os.path.join('resources', 'ui', 'files_dock.ui'), self
-        )
+        self.setupUi(self)
 
         self.model = QFileSystemModel()
         

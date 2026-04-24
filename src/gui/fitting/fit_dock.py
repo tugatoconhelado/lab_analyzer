@@ -2,15 +2,14 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QDockWidget, QTableWidgetItem)
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from src.core.structures import LineConfig, AxesConfig
+from resources.ui.ui_fit_dock import Ui_fit_dock
 
-
-class FitDock(QDockWidget):
+class FitDock(QDockWidget, Ui_fit_dock):
     """
     Dock widget for displaying fit results and allowing parameter adjustments.
     
@@ -48,9 +47,7 @@ class FitDock(QDockWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(
-            os.path.join('resources', 'ui', 'fit_dock.ui'), self
-        )
+        self.setupUi(self)
 
         self._connect_gui_signals()
 

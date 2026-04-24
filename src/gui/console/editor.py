@@ -1,9 +1,9 @@
 import os
 import sys
 from PyQt5.QtWidgets import QWidget
-from PyQt5.uic import loadUi
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..',
                                             '..')))
+from resources.ui.ui_editor import Ui_EditorWidget
 
 from PyQt5.Qsci import QsciScintilla, QsciLexerPython
 from PyQt5.QtGui import QFont, QColor, QPalette
@@ -12,15 +12,13 @@ from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 
 
-class EditorWidget(QsciScintilla):
+class EditorWidget(QsciScintilla, Ui_EditorWidget):
 
     run_code_signal = Signal(str)  # Signal to send code to the console
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(
-            os.path.join('resources', 'ui', 'editor.ui'), self
-        )
+        self.setupUi(self)
 
         self._setup_editor()
     def _setup_editor(self):

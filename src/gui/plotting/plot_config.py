@@ -1,16 +1,15 @@
 from PyQt5.QtWidgets import QDockWidget, QColorDialog, QLabel
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.uic import loadUi
 
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
 from src.core.structures import LineConfig, AxesConfig
 from src.core.style_generator import get_default_config, LineType
+from resources.ui.ui_plot_dock import Ui_plot_dock
 
-
-class PlotControlDock(QDockWidget):
+class PlotControlDock(QDockWidget, Ui_plot_dock):
     
 
     line_config_changed = Signal(str, LineConfig)
@@ -19,9 +18,7 @@ class PlotControlDock(QDockWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(
-            os.path.join('resources', 'ui', 'plot_dock.ui'), self
-        )
+        self.setupUi(self)
         
         self._line_configs = {}
         self._plot_configs = {} 
