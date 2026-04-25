@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
+from src.core.constants import AssetType
 
 @dataclass
 class InspectInfo:
@@ -26,11 +27,9 @@ class Group:
     children: Dict[str, Any] = field(default_factory=dict)
     shape: Optional[tuple] = None
 
-
 @dataclass
 class WorkbenchAsset:
 
-    name : str
-    content : Any
-    asset_type : str
+    name : str = ""
+    kind : AssetType = AssetType.NONE
     timestamp : datetime = field(default_factory=datetime.now)

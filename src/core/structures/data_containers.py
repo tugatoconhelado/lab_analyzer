@@ -3,14 +3,20 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+from src.core.constants import AssetType
+from src.core.structures import WorkbenchAsset
+
 
 @dataclass
-class Dataset:
-    name: str = ""
+class Dataset(WorkbenchAsset):
     path: str = ""
     data: np.ndarray = field(default_factory=lambda: np.array([]))
     unit: str = ""
     metadata: dict = field(default_factory=dict)
+    kind: AssetType = AssetType.DATASET
     
     @property
     def ndim(self): return self.data.ndim
@@ -18,16 +24,13 @@ class Dataset:
     @property
     def shape(self): return self.data.shape
 
-    @property
-    def timestamp(self): return self.metadata.get('timestamp', 0.0)
-
 
 @dataclass
-class Trace:
+class Trace(WorkbenchAsset):
     """A virtual object that links an X dataset and a Y dataset."""
-    name: str
-    x_ds: Dataset  # Reference to the actual Dataset object
-    y_ds: Dataset  # Reference to the actual Dataset object
+    x_ds: Dataset  = field(default_factory=lambda: Dataset())
+    y_ds: Dataset  = field(default_factory=lambda: Dataset())
+    kind: AssetType = AssetType.TRACE
     
     @property
     def data(self):
@@ -50,14 +53,12 @@ class Trace:
         return f"Trace({self.name}: {self.y_ds.name} vs {self.x_ds.name})"
 
 
-class FitResult:
+class FitResult(WorkbenchAsset):
     
     def __init__(self, name, model, lmfit_result, source_trace):
-        self.name = name
+        super().__init__(name=name, kind=AssetType.FIT)
         self.result = lmfit_result
 
-        self.timestamp = datetime.now()
-        self.name = name
         self.model = model
         self.result = lmfit_result
         
@@ -90,3 +91,11 @@ class FitResult:
     def eval_at(self, new_x):
         """Perform operations: Calculate Y for any arbitrary X."""
         return self.model.eval(self.result.params, x=new_x)
+
+
+if __name__ == "__main__":
+    # Quick test to ensure structures work as expected
+    x_ds = Dataset(name="X Data", data=np.random.random(100))
+    y_ds = Dataset(name="Y Data", data=np.random.random(100))
+    trace = Trace(name="Test Trace", x_ds=x_ds, y_ds=y_ds)
+    print(x_ds.kind, x_ds.shape)

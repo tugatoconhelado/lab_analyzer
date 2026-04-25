@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtCore import QTimer
 from matplotlib.backends.backend_qt import NavigationToolbar2QT
 import numpy as np
 import pyqtgraph as pg
@@ -36,6 +37,15 @@ class PlotWindow(QMainWindow, Ui_plot_window):
 
     def refresh(self):
         self.plot_canvas.update_from_object(self.plot_obj)
+
+    def showEvent(self, a0):
+        super().showEvent(a0)
+        # Queue activation after show so window managers apply focus reliably.
+        QTimer.singleShot(0, self._bring_to_front)
+
+    def _bring_to_front(self):
+        self.raise_()
+        self.activateWindow()
 
 
 

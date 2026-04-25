@@ -16,6 +16,7 @@ Aims to be a suite to analyze data from quantum optics experiments.
     - Add to new Trace (Dataset)
     - Create new plot (Dataset | Trace | FitResult)
     - Plot in (Dataset | Trace | FitResult)
+      - List of plots
     - Export (Dataset | Trace | FitResult)
       - HDF5
       - JSON

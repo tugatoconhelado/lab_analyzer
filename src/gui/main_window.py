@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtCore import QTimer
 
 import numpy as np
 import sys
@@ -147,6 +148,15 @@ class AnalyzerMainWindow(QMainWindow, Ui_MainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.config_widget)
         self.config_widget.line_config_changed.connect(self.update_plot_config)
         self.tabifyDockWidget(self.fit_dock, self.config_widget)
+
+    def showEvent(self, a0):
+        super().showEvent(a0)
+        # Queue activation after show so window managers apply focus reliably.
+        QTimer.singleShot(0, self._bring_to_front)
+
+    def _bring_to_front(self):
+        self.raise_()
+        self.activateWindow()
 
     @Slot(str, LineConfig)
     def update_plot_config(self, line: str, config: LineConfig):
