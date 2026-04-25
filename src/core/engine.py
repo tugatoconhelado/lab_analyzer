@@ -73,8 +73,8 @@ class AnalysisEngine:
         Requests specific arrays from the loader and stores them 
         as the 'active' state for fitting.
         """
-        self.active_x = self.registry.get(x_key)
-        self.active_y = self.registry.get(y_key)
+        self.active_x = self.registry.get_from_name(x_key)
+        self.active_y = self.registry.get_from_name(y_key)
 
         if self.active_x is None or self.active_y is None:
             raise ValueError(f"Could not find datasets for keys: '{x_key}', '{y_key}'")

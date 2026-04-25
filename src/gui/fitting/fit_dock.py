@@ -108,7 +108,6 @@ class FitDock(QDockWidget, Ui_fit_dock):
     @Slot(list)
     def refresh_models(self, models: list):
         """Refreshes the model selection dropdown with a new list of models."""
-        print(f"Received model list: {models}")
         self.models_combobox.clear()
         self.models_combobox.addItems(models)
 
@@ -184,7 +183,7 @@ class FitDock(QDockWidget, Ui_fit_dock):
         self.y_combo.clear()
         
         # Get keys from the Registry warehouse
-        keys = list(self.registry_ref._data_store.keys())
+        keys = list(item.name for item in self.registry_ref._data_store.values())
         self.x_combo.addItems(keys)
         self.y_combo.addItems(keys)
 

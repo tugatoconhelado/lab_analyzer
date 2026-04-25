@@ -1,15 +1,10 @@
-from dataclasses import dataclass
+import numpy as np
 
-@dataclass
-class Parent:
-    a: int = 10
-    b: int = 20
+a = np.random.random(100)
+b = np.random.random(100)
 
-@dataclass
-class Child(Parent):
-    a: int = 100  # Overriding the default value
-    c: int = 30   # Adding a new field
+c = np.vstack((a, b))
 
-# Usage
-obj = Child()
-print(obj) 
+print(a.shape, a.ndim)
+print(b.shape, b.ndim)
+print(c.shape, c.ndim)

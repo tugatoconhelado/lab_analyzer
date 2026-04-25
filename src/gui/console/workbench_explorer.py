@@ -55,7 +55,7 @@ class WorkbenchExplorer(QTreeView):
             ),
         )
         
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.doubleClicked.connect(self.on_item_double_clicked)
         
@@ -94,11 +94,14 @@ class WorkbenchExplorer(QTreeView):
 
     def _selected_assets(self):
         assets = []
-        for index in self.selectionModel().selectedRows():
+        selection_model = self.selectionModel()
+        if selection_model is None:
+            return assets
+        for index in selection_model.selectedRows():
             asset = index.data(Qt.ItemDataRole.UserRole)
             kind = index.data(Qt.ItemDataRole.UserRole + 1)
             if asset is not None:
-                assets.append((asset, kind))
+                assets.append(asset.asset_id)
         return assets
 
     def _emit_selected_assets(self, signal):
@@ -133,6 +136,7 @@ if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     from qtconsole.inprocess import QtInProcessKernelManager
     from src.core.structures import Dataset, Trace
+    from src.core.plot_object import PlotObject
     import numpy as np
     from src.gui.console.workspace import WorkspaceWidget
     
@@ -149,6 +153,8 @@ if __name__ == "__main__":
     widget.workbench._model.add_item(Trace(name="Test Trace", x_ds=x_ds_test1, y_ds=y_ds_test1))
     widget.workbench._model.add_item(Dataset(name="Test Dataset", data=np.array([1, 2, 3])))
     widget.workbench._model.add_item(Dataset(name="Var3 Dataset", data=np.array([4, 5, 6])))
+    plot_test = PlotObject("Test Plot", widget.workbench._model.registry)
+    widget.workbench._model.add_item(plot_test)
     widget.resize(800, 600)
     widget.show()
     widget.raise_()

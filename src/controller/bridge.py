@@ -40,6 +40,12 @@ class AnalyzerBridge(QObject):
         self.engine = AnalysisEngine(plugin_path=r"models", registry=self.registry)
         self.plot_manager = PlotManager(self.registry)
         self.ui.connect_to_bridge(self) # type: ignore
+        self.connect_workbench_explorer()
+
+    def connect_workbench_explorer(self):
+
+        explorer = self.ui.workspace.workbench
+        explorer.create_plot_sig.connect(self.create_plot)
 
     def get_kernel_client(self):
         return self.kernel_client
@@ -47,6 +53,10 @@ class AnalyzerBridge(QObject):
     def get_kernel_manager(self):
         return self.kernel_manager
     
+    def create_plot(self, traces):
+
+        self.plot_manager.create_new_window(traces)
+
     @Slot()
     def get_models(self):
         """

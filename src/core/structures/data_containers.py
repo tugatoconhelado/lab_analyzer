@@ -47,7 +47,11 @@ class Trace(WorkbenchAsset):
     
     @property
     def shape(self):
-        return self.x_ds.shape, self.y_ds.shape
+        return 2, self.y_ds.shape
+    
+    @property
+    def ndim(self):
+        return 2
 
     def __repr__(self):
         return f"Trace({self.name}: {self.y_ds.name} vs {self.x_ds.name})"

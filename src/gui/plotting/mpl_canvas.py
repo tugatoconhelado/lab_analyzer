@@ -32,14 +32,23 @@ class MplCanvas(FigureCanvasQTAgg):
         """Updates the plot based on the provided PlotObject."""
         self.clear_plot()
         for trace_id in obj.trace_ids:
-            trace = obj.registry.get(trace_id)
-            line_cfg = obj.trace_configs.get(trace_id, LineConfig())
+            trace = obj.get_data(trace_id)
+            line_cfg = obj.get_trace_config(trace_id)
             if trace and line_cfg:
-                x_data, y_data = trace.data
+                data = trace.data
+                if data is None:
+                    continue
+                if data.ndim == 2:
+                    x_data, y_data = data
+                elif data.ndim == 1:
+                    x_data = np.arange(len(data))
+                    y_data = data
+                else:
+                    continue
                 self.add_data_line(x_data, y_data, line_id=trace_id)
                 self.apply_line_config(trace_id, line_cfg)
 
-        self.apply_axes_config(obj.plot_id, obj.axes_config)
+        self.apply_axes_config(obj.name, obj.axes_config)
 
     def clear_plot(self):
         """Clears the current plot and resets line tracking."""
@@ -49,18 +58,14 @@ class MplCanvas(FigureCanvasQTAgg):
         self._data_line_counter = 0
         self.draw()
 
-    def add_data_line(self, x_data: np.ndarray, y_data: np.ndarray, line_id: str = ""):
+    def add_data_line(self, x_data: np.ndarray, y_data: np.ndarray, line_id: int | None = None) -> int | None:
         """
         Standard method to refresh the plot with new Dataset.
         """
+        if line_id is None:
+            return None
         line = self.axes.plot(x_data, y_data, 'o', color='blue', label="Data")[0]
         self.draw()
-
-        if not line_id:
-            if "data" in self._lines:
-                line_id = f"data_{self._data_line_counter:02d}"
-            else:
-                line_id = "data"
         self._lines[line_id] = line
         self._data_line_counter += 1
 
@@ -79,8 +84,11 @@ class MplCanvas(FigureCanvasQTAgg):
         self._fit_line_counter += 1
         return line_id
 
-    def apply_line_config(self, line_id: str, config: LineConfig):
+    def apply_line_config(self, line_id: int | None, config: LineConfig):
         """Updates the plot's appearance based on the provided LineConfig."""
+
+        if line_id is None:
+            return
 
         line = self._lines.get(line_id, None)
         if line:

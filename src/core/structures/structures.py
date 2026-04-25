@@ -33,3 +33,4 @@ class WorkbenchAsset:
     name : str = ""
     kind : AssetType = AssetType.NONE
     timestamp : datetime = field(default_factory=datetime.now)
+    asset_id : int = 0

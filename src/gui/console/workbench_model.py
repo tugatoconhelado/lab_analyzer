@@ -73,13 +73,8 @@ class WorkbenchModel(QStandardItemModel):
         name = item.name
         kind = item.kind
 
-        # Decide category based on type or name heuristics
         if kind & AssetType.FIT or kind & AssetType.MODEL:
             category = "Fits"
-        elif kind & AssetType.PLOT:
-            category = "Plots"
-
-        if kind & AssetType.FIT or kind & AssetType.MODEL:
             self._add_fit_to_tree(item)
             return
         elif kind & AssetType.TRACE:
@@ -88,6 +83,10 @@ class WorkbenchModel(QStandardItemModel):
         elif kind & AssetType.DATASET:
             category = "Datasets"
             self._add_dataset_to_tree(item)
+            return
+        elif kind & AssetType.PLOT:
+            category = "Plots"
+            self._add_plot_to_tree(item)
             return
             
         # Create the row items
@@ -214,6 +213,15 @@ class WorkbenchModel(QStandardItemModel):
         fit_node.appendRow(curve_row)
         
         self.root_nodes["Fits"].appendRow(fit_node)
+
+    def _add_plot_to_tree(self, plot_obj):
+        plot_node = QStandardItem(f"🖼️ Plot: {plot_obj.name}")
+        plot_node.setForeground(QColor("purple"))
+        plot_node.setData(plot_obj, Qt.ItemDataRole.UserRole)
+        plot_node.setData(AssetType.PLOT, Qt.ItemDataRole.UserRole + 1)
+
+        kind_item = QStandardItem("Plot")
+        self.root_nodes["Plots"].appendRow([plot_node, kind_item, QStandardItem("")])
 
     def _construct_item_row(self, item, name: str = "", kind_id: int = 0, link: str = ""):
 
