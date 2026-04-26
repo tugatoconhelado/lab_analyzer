@@ -155,7 +155,6 @@ class HDF5ExplorerDock(QDockWidget, Ui_HDF5ExplorerDock):
     def handle_selection(self, item):
         path = item.data(0, Qt.ItemDataRole.UserRole)["path"]
         kind = item.data(0, Qt.ItemDataRole.UserRole)["kind"]
-        print(f"User selected: {path}, Kind: {kind}")
         if kind == "Dataset":
             self.load_to_workbench.emit(path)
 

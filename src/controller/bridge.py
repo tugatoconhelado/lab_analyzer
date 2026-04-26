@@ -10,6 +10,8 @@ from src.core.engine import InspectInfo, Dataset
 from src.core.workbench import WorkbenchRegistry
 from qtconsole.inprocess import QtInProcessKernelManager
 from src.controller.plot_manager import PlotManager
+import logging
+logger = logging.getLogger(__name__)
 
 
 class AnalyzerBridge(QObject):
@@ -38,14 +40,18 @@ class AnalyzerBridge(QObject):
 
         self.registry = WorkbenchRegistry(self.kernel_manager.kernel.shell)
         self.engine = AnalysisEngine(plugin_path=r"models", registry=self.registry)
-        self.plot_manager = PlotManager(self.registry)
-        self.ui.connect_to_bridge(self) # type: ignore
-        self.connect_workbench_explorer()
+        self.plot_manager = PlotManager(self.registry, self.ui)
+        if self.ui is not None:
+            self.ui.connect_to_bridge(self)
+            self.connect_workbench_explorer()
 
     def connect_workbench_explorer(self):
-
+        if self.ui is None:
+            return
         explorer = self.ui.workspace.workbench
         explorer.create_plot_sig.connect(self.create_plot)
+        explorer.show_plot_sig.connect(self.show_plot)
+        explorer.export_plot_sig.connect(self.export_plot)
 
     def get_kernel_client(self):
         return self.kernel_client
@@ -53,9 +59,18 @@ class AnalyzerBridge(QObject):
     def get_kernel_manager(self):
         return self.kernel_manager
     
-    def create_plot(self, traces):
+    @Slot(list)
+    def create_plot(self, traces: list[int]):
 
         self.plot_manager.create_new_window(traces)
+
+    @Slot(list)
+    def show_plot(self, plot_id: list[int]):
+        self.plot_manager.reopen_plot(plot_id)
+
+    @Slot(list, str)
+    def export_plot(self, plot_id: list[int], export_format: str):
+        self.plot_manager.export_plot(plot_id, export_format)
 
     @Slot()
     def get_models(self):
@@ -63,7 +78,6 @@ class AnalyzerBridge(QObject):
         Grabs the list of models and parameters from the model_manager
         """
         models = self.engine.read_available_models()
-        print(f"Loaded models: {models}")
         self.models_sig.emit(models)
 
     @Slot(str)
@@ -72,7 +86,7 @@ class AnalyzerBridge(QObject):
         Called when the user selects a model in the GUI dropdown.
         """
         model_params = self.engine.select_model(model_name)
-        print(f"Loaded model '{model_name}' with parameters: {model_params}")
+        logger.debug(f"Loaded model '{model_name}' with parameters: {model_params}")
         self.params_sig.emit(model_params)
 
     @Slot(str)
@@ -110,8 +124,8 @@ class AnalyzerBridge(QObject):
             self.engine.select_model(model_name)
 
         fit_result, fitted_params = self.engine.run_fit()
-        print("Fit result:", fit_result)
-        print("Fitted parameters:", fitted_params)
+        logger.info(f"Fit result: {fit_result}")
+        logger.info(f"Fitted parameters: {fitted_params}")
         # if result or fitted_params is None:
         #     raise ValueError("Fit failed or returned no parameters.")
         

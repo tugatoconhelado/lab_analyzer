@@ -64,7 +64,6 @@ class LogRegistryDock(QDockWidget, Ui_LogRegistryDock):
         if handler is None:
             self.handler = QtLogHandler()
         else:   
-            print("Correcting handler...")
             self.handler = handler
         date_format = '%Y-%m-%d %H:%M:%S'
         formatter = logging.Formatter('%(asctime)s', datefmt=date_format)

@@ -207,7 +207,7 @@ if __name__ == "__main__":
     import sys
     from matplotlib import markers
 
-    #print(markers.MarkerStyle.markers)  # Print available markers for reference
+    #print(markers.MarkerStyle.markers)
     app = QApplication(sys.argv)
     widget = PlotControlDock()
     widget.show()

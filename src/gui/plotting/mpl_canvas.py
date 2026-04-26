@@ -154,5 +154,4 @@ if __name__ == "__main__":
     canvas.add_fit_line(fit_x_2, fit_y_2)
     canvas.show()
 
-    print(canvas._lines)
     sys.exit(app.exec_())

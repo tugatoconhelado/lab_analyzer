@@ -74,5 +74,3 @@ if __name__ == '__main__':
     bench.add("test1", d1, "Dataset")
     bench.add("test2", d2, "Dataset")
     bench.add("test3", d3, "Dataset")
-    print(bench.get(d2.asset_id))
-    print(bench)

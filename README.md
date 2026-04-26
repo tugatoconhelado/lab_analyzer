@@ -7,20 +7,27 @@ Aims to be a suite to analyze data from quantum optics experiments.
 ## To-Do
 
 - Handle plot creation
-  - Handle data selection for plotting
-  - Plotting should be implemented from workbench loaded datasets or traces
+  - Handle data selection for plotting ✅
+  - Plotting should be implemented from workbench loaded datasets or traces ✅
   - Add plot method to Traces and FitResult
 - Workbench right click menu
     - Delete workbench item (All except root nodes)
     - Add to Trace (Dataset)
     - Add to new Trace (Dataset)
-    - Create new plot (Dataset | Trace | FitResult)
+    - Show Plot (Plot) ✅
+    - Configure Plot (Plot)
+    - Create new plot (Dataset ✅| Trace ✅| FitResult) 
     - Plot in (Dataset | Trace | FitResult)
       - List of plots
+        - List of Axes
     - Export (Dataset | Trace | FitResult)
       - HDF5
       - JSON
       - Numpy
       - CSV
+    - Export (Plot) ✅
+      - PNG ✅
+      - SVG ✅
+      - PDF ✅
 - FitResult data saving
 - Finish and clean logging implementation ✅

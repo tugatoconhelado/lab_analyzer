@@ -6,6 +6,8 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from src.core.structures import InspectInfo, Dataset
+import logging
+logger = logging.getLogger(__name__)
 
 
 class Hdf5Loader:
@@ -49,7 +51,7 @@ class Hdf5Loader:
         with h5py.File(filepath, 'a') as f:
             # Ensure the structure follows our pillar layout
             if "Data" not in f:
-                print("Warning: Saving analysis to a file without a 'Data' group.")
+                logger.warning("Saving analysis to a file without a 'Data' group.")
             
             # Create/Access the Analysis pillar
             timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M-%S')
@@ -157,7 +159,7 @@ class Hdf5Loader:
             with h5py.File(self.filepath, 'r') as f:
                 return {"/": {"type": "Group", "children": _walk_group(f)}}
         except Exception as e:
-            print(f"Error reading file: {e}")
+            logger.error(f"Error reading file: {e}")
             return {}
 
     def fetch_inspect_info(self, internal_path) -> InspectInfo:
@@ -211,8 +213,8 @@ class Hdf5Loader:
 
 if __name__ == "__main__":
 
-
+    logging.basicConfig(level=logging.INFO)
     loader = Hdf5Loader()
     tree = loader.load_file(r"ex_data.h5")
-    print(tree)
-    print(loader.fetch_dataset("Data"))
+    logger.info(tree)
+    logger.info(loader.fetch_dataset("Data"))

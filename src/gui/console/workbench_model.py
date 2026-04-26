@@ -5,7 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.
 
 from PyQt5.QtWidgets import (QAction, QMenu, QSplitter, QTreeView, QTreeWidget, QWidget, QVBoxLayout, QTabWidget, 
     QTableWidget, QHeaderView, QTableWidgetItem, QAbstractItemView)
-from PyQt5.QtCore import Qt, pyqtSignal as Signal, pyqtSlot as Slot
+from PyQt5.QtCore import QModelIndex, Qt, pyqtSignal as Signal, pyqtSlot as Slot
 from PyQt5.QtGui import QColor, QStandardItemModel, QStandardItem
 
 from src.gui.console.console import ConsoleWidget
@@ -143,11 +143,11 @@ class WorkbenchModel(QStandardItemModel):
         for name, obj in registry_data.items():
             self.add_item(obj)
 
-    def _add_dataset_to_tree(self, dataset_obj):
+    def _add_dataset_to_tree(self, dataset_obj, root_node=None):
 
         dataset_node = QStandardItem(f"📊 {dataset_obj.name}")
         dataset_node.setForeground(QColor("green"))
-        dataset_node.setData(dataset_obj, Qt.ItemDataRole.UserRole)
+        dataset_node.setData(dataset_obj.asset_id, Qt.ItemDataRole.UserRole)
         dataset_node.setData(AssetType.DATASET, Qt.ItemDataRole.UserRole + 1)
         obj_name = getattr(dataset_obj, 'name', 'N/A')
         dataset_node.setData(obj_name, Qt.ItemDataRole.UserRole + 3)
@@ -159,54 +159,68 @@ class WorkbenchModel(QStandardItemModel):
         shape_item = QStandardItem(shape)
 
         row = [dataset_node, type_item, shape_item]
-        self.root_nodes["Datasets"].appendRow(row)
+        if root_node is None:
+            self.root_nodes["Datasets"].appendRow(row)
+        else:
+            root_node.appendRow(row)
 
-    def _add_trace_to_tree(self, trace_obj):
+    def _add_trace_to_tree(self, trace_obj, root_node=None, link: int = 0):
 
         trace_node = QStandardItem(f"🔗 Trace: {trace_obj.name}")
         trace_node.setForeground(QColor("blue"))
-        trace_node.setData(trace_obj, Qt.ItemDataRole.UserRole)
-        trace_node.setData(AssetType.TRACE, Qt.ItemDataRole.UserRole + 1)
-        
+        trace_node.setData(trace_obj.asset_id, Qt.ItemDataRole.UserRole)
+        trace_node.setData(trace_obj.name, Qt.ItemDataRole.UserRole + 3)
+        print(link)
+        if link != 0:
+            trace_node.setData(AssetType.TRACE | AssetType.LINK, Qt.ItemDataRole.UserRole + 1)
+            trace_node.setData(link, Qt.ItemDataRole.UserRole + 2)
+            print(f"Adding trace with link: {link}")
+        else:
+            trace_node.setData(AssetType.TRACE, Qt.ItemDataRole.UserRole + 1)
+            print("Adding trace without link")
+
         x_row = self._construct_item_row(
             trace_obj.x_ds, 
             name=f"🔗 X-Axis: {trace_obj.x_ds.name}",
             kind_id=AssetType.DATASET | AssetType.LINK,
-            link=trace_obj.x_ds.name  
+            link=trace_obj.x_ds.asset_id
         )
         y_row = self._construct_item_row(
             trace_obj.y_ds,
             name=f"🔗 Y-Axis: {trace_obj.y_ds.name}",
             kind_id=AssetType.DATASET | AssetType.LINK,
-            link=trace_obj.y_ds.name 
+            link=trace_obj.y_ds.asset_id
         )
 
         trace_node.appendRow(x_row)
         trace_node.appendRow(y_row)
 
         kind_item = QStandardItem("Trace")
-        trace_node.setData(AssetType.TRACE, Qt.ItemDataRole.UserRole + 1)
-        self.root_nodes["Traces"].appendRow([trace_node, kind_item, QStandardItem("")])
+        if root_node is None:
+            self.root_nodes["Traces"].appendRow([trace_node, kind_item, QStandardItem("")])
+        else:
+            root_node.appendRow([trace_node, kind_item, QStandardItem("")])
 
     def _add_fit_to_tree(self, fit_obj):
         """Adds a FitResult as a expandable branch in the tree."""
         # 1. Create the Main Fit Row
         fit_node = QStandardItem(f"📉 Fit: {fit_obj.name}")
         fit_node.setForeground(QColor("red"))
-        fit_node.setData(fit_obj, Qt.ItemDataRole.UserRole)
+        fit_node.setData(fit_obj.asset_id, Qt.ItemDataRole.UserRole)
         fit_node.setData(AssetType.FIT, Qt.ItemDataRole.UserRole + 1)
+        fit_node.setData(fit_obj.name, Qt.ItemDataRole.UserRole + 3)
 
         trace_row = self._construct_item_row(
             fit_obj.trace,
             name=f"🔗 Trace: {fit_obj.trace.name}",
             kind_id=AssetType.TRACE | AssetType.LINK,
-            link=fit_obj.trace.name
+            link=fit_obj.trace.asset_id
         )
         curve_row = self._construct_item_row(
             fit_obj.curve,
             name=f"📈 {fit_obj.curve.name}",
             kind_id=AssetType.DATASET | AssetType.LINK,
-            link=fit_obj.curve.name
+            link=fit_obj.curve.asset_id
         )
 
         fit_node.appendRow(trace_row)
@@ -217,13 +231,22 @@ class WorkbenchModel(QStandardItemModel):
     def _add_plot_to_tree(self, plot_obj):
         plot_node = QStandardItem(f"🖼️ Plot: {plot_obj.name}")
         plot_node.setForeground(QColor("purple"))
-        plot_node.setData(plot_obj, Qt.ItemDataRole.UserRole)
+        plot_node.setData(plot_obj.asset_id, Qt.ItemDataRole.UserRole)
         plot_node.setData(AssetType.PLOT, Qt.ItemDataRole.UserRole + 1)
+        plot_node.setData(plot_obj.name, Qt.ItemDataRole.UserRole + 3)
 
         kind_item = QStandardItem("Plot")
+
+        for trace_obj in plot_obj.traces.values():
+            print(trace_obj)
+            self._add_trace_to_tree(
+                trace_obj,
+                root_node=plot_node,
+                link=trace_obj.asset_id
+            )
         self.root_nodes["Plots"].appendRow([plot_node, kind_item, QStandardItem("")])
 
-    def _construct_item_row(self, item, name: str = "", kind_id: int = 0, link: str = ""):
+    def _construct_item_row(self, item, name: str = "", kind_id: int = 0, link: int = 0):
 
         item_name = getattr(item, 'name', 'N/A')
         if not name:
@@ -232,10 +255,9 @@ class WorkbenchModel(QStandardItemModel):
         shape = str(getattr(item, 'shape', 'N/A'))
 
         name_item = QStandardItem(name)
-        name_item.setData(item, Qt.ItemDataRole.UserRole)
+        name_item.setData(item.asset_id, Qt.ItemDataRole.UserRole)
         name_item.setData(item_name, Qt.ItemDataRole.UserRole + 3)
-        if link:
-            # Store the link target in UserRole + 2 for later retrieval
+        if link != 0:
             name_item.setData(link, Qt.ItemDataRole.UserRole + 2)
         if kind_id != 0:
             name_item.setData(kind_id, Qt.ItemDataRole.UserRole + 1)
@@ -244,10 +266,16 @@ class WorkbenchModel(QStandardItemModel):
 
         return [name_item, type_item, shape_item]
     
-    def find_linked_item_idx(self, link_target):
+    def find_linked_item_idx(self, link_target: int) -> QModelIndex:
         
-        for row in range(self.root_nodes["Datasets"].rowCount()):
-            ds_item = self.root_nodes["Datasets"].child(row)
-            item_name = ds_item.data(Qt.ItemDataRole.UserRole + 3)
-            if ds_item is not None and item_name == link_target:
-                return ds_item.index()
+        if link_target == 0:
+            return QModelIndex()
+        # Search column 0 recursively by stored link (UserRole + 3)
+        matches = self.match(
+            self.index(0, 0),
+            Qt.ItemDataRole.UserRole,
+            link_target,
+            1,
+            Qt.MatchFlag.MatchRecursive | Qt.MatchFlag.MatchExactly,
+        )
+        return matches[0] if matches else QModelIndex()

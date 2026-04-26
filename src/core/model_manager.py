@@ -54,8 +54,6 @@ if __name__ == "__main__":
     # Usage
     manager = ModelManager(r"models")
     models = manager.load_plugins()
-    print("Available models:", models)
     model = manager.fetch_model("SingleExponential")
-    print(model)
 
     

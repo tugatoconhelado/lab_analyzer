@@ -20,7 +20,10 @@ class WorkbenchExplorer(QTreeView):
     add_to_plot_sig = Signal(list)
     export_hdf5_sig = Signal(list)
     export_csv_sig = Signal(list)
+    show_plot_sig = Signal(list)
+    export_plot_sig = Signal(list, str)
     delete_item_sig = Signal(list)
+    configure_plot_sig = Signal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -52,6 +55,11 @@ class WorkbenchExplorer(QTreeView):
                 export_hdf5=self._emit_export_hdf5,
                 export_csv=self._emit_export_csv,
                 delete_item=self._emit_delete_item,
+                show_plot=self._emit_show_plot,
+                export_png=self._emit_export_png,
+                export_svg=self._emit_export_svg,
+                export_pdf=self._emit_export_pdf,
+                configure_plot=self._emit_configure_plot,
             ),
         )
         
@@ -72,6 +80,7 @@ class WorkbenchExplorer(QTreeView):
         if kind is None:
             return
         if kind & AssetType.LINK:
+            print("Double-clicked link on item:", item.text())
             link_target = item.data(Qt.ItemDataRole.UserRole + 2)
 
             if not link_target:
@@ -83,14 +92,14 @@ class WorkbenchExplorer(QTreeView):
                 self.setCurrentIndex(linked_index)
         
         elif kind & AssetType.DATASET:
-            asset = item.data(Qt.ItemDataRole.UserRole)
+            asset = item.data(Qt.ItemDataRole.UserRole + 3)
             if asset is not None:
-                print(f"Double-clicked dataset: {asset.name}")
+                print(f"Double-clicked dataset: {asset}")
 
         elif kind & AssetType.TRACE:
-            asset = item.data(Qt.ItemDataRole.UserRole)
+            asset = item.data(Qt.ItemDataRole.UserRole + 3)
             if asset is not None:
-                print(f"Double-clicked trace: {asset.name}")
+                print(f"Double-clicked trace: {asset}")
 
     def _selected_assets(self):
         assets = []
@@ -101,7 +110,7 @@ class WorkbenchExplorer(QTreeView):
             asset = index.data(Qt.ItemDataRole.UserRole)
             kind = index.data(Qt.ItemDataRole.UserRole + 1)
             if asset is not None:
-                assets.append(asset.asset_id)
+                assets.append(asset)
         return assets
 
     def _emit_selected_assets(self, signal):
@@ -127,7 +136,27 @@ class WorkbenchExplorer(QTreeView):
 
     def _emit_delete_item(self):
         self._emit_selected_assets(self.delete_item_sig)
+
+    def _emit_show_plot(self):
+        self._emit_selected_assets(self.show_plot_sig)
+
+    def _emit_export_plot(self, export_format: str):
+        plot_id = self._selected_assets()
+        if not plot_id:
+            return
+        self.export_plot_sig.emit(plot_id, export_format)
+
+    def _emit_export_png(self):
+        self._emit_export_plot("png")
+
+    def _emit_export_svg(self):
+        self._emit_export_plot("svg")
+
+    def _emit_export_pdf(self):
+        self._emit_export_plot("pdf")
     
+    def _emit_configure_plot(self):
+        self._emit_selected_assets(self.configure_plot_sig)
 
         
         
@@ -146,14 +175,17 @@ if __name__ == "__main__":
     kernel_client = kernel_manager.client()
     kernel_client.start_channels()
     widget = WorkspaceWidget(None, kernel_manager, kernel_client)
-    x_ds_test1 = Dataset(name="X Data", data=np.random.random(100))
-    y_ds_test1 = Dataset(name="Y Data", data=np.random.random(100))
+    x_ds_test1 = Dataset(name="X Data", data=np.random.random(100), asset_id=1)
+    y_ds_test1 = Dataset(name="Y Data", data=np.random.random(100), asset_id=2)
+    test_trace = Trace(name="Test Trace", x_ds=x_ds_test1, y_ds=y_ds_test1, asset_id=6)
     widget.workbench._model.add_item(x_ds_test1)
     widget.workbench._model.add_item(y_ds_test1)
-    widget.workbench._model.add_item(Trace(name="Test Trace", x_ds=x_ds_test1, y_ds=y_ds_test1))
-    widget.workbench._model.add_item(Dataset(name="Test Dataset", data=np.array([1, 2, 3])))
-    widget.workbench._model.add_item(Dataset(name="Var3 Dataset", data=np.array([4, 5, 6])))
-    plot_test = PlotObject("Test Plot", widget.workbench._model.registry)
+    widget.workbench._model.add_item(test_trace)
+    widget.workbench._model.add_item(Dataset(name="Test Dataset", data=np.array([1, 2, 3]), asset_id=3))
+    widget.workbench._model.add_item(Dataset(name="Var3 Dataset", data=np.array([4, 5, 6]), asset_id=4))
+    plot_test = PlotObject("Test Plot", widget.workbench._model.registry, asset_id=5)
+    plot_test.traces[6] = test_trace
+
     widget.workbench._model.add_item(plot_test)
     widget.resize(800, 600)
     widget.show()
